@@ -20,6 +20,10 @@ type TokenResponse struct {
 
 func getAuth0Endpoint(environment string) string {
 	switch environment {
+	case "us":
+		return "https://funnel.us.auth0.com/oauth/token"
+	case "eu":
+		return "https://funnel.us.auth0.com/oauth/token"
 	default:
 		return "https://funnel-dev.eu.auth0.com/oauth/token"
 	}
@@ -27,6 +31,10 @@ func getAuth0Endpoint(environment string) string {
 
 func getAuth0Audience(environment string) string {
 	switch environment {
+	case "us":
+		return "https://controlplane.setup.us.funnel.io"
+	case "eu":
+		return "https://controlplane.setup.eu.funnel.io"
 	default:
 		return "https://controlplane.setup.stage.funnel.io"
 	}

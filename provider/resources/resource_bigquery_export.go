@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -173,8 +172,6 @@ func (r *BigqueryResource) Read(ctx context.Context, req resource.ReadRequest, r
 	// Merge API response with state - preserve ID and workspace, prefer API values for everything else
 	export.Id = data.Id
 	export.Workspace = data.Workspace
-
-	tflog.Info(ctx, fmt.Sprintf("Read export response: %+v", export))
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &export)...)

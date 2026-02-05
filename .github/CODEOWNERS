@@ -1,0 +1,5 @@
+# Next line contains is also intended for scanners (should match catalog-info spec.domain values)
+# partOf.domain:funnel-io/product
+
+# Default / main owner (github team):
+*                               @funnel-io/data-out-platform

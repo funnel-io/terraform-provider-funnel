@@ -48,7 +48,6 @@ func ApplyHTTPHeaders(req *http.Request, token string) {
 
 func GetSubscriptionEntities(ctx context.Context, entity string, config *common.FunnelProviderModel) (map[string]interface{}, error) {
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), entity)
-	tflog.Info(ctx, "Requesting URL", map[string]interface{}{"url": reqURL, "method": http.MethodGet})
 	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
 		return nil, err
@@ -98,7 +97,6 @@ func GetWorkspaceEntity[T any](ctx context.Context, entity string, config *commo
 	var respObj T
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
-	tflog.Info(ctx, "Requesting URL", map[string]interface{}{"url": reqURL, "method": http.MethodGet})
 	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
 		return respObj, err
@@ -151,7 +149,6 @@ func CreateWorkspaceEntity[T any](ctx context.Context, entity string, config *co
 	}
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity)
-	tflog.Info(ctx, "Requesting URL", map[string]interface{}{"url": reqURL, "method": http.MethodPost})
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, &APIError{Message: "Failed to create request", Details: err}
@@ -204,7 +201,6 @@ func UpdateWorkspaceEntity[T any](ctx context.Context, entity string, config *co
 	}
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
-	tflog.Info(ctx, "Requesting URL", map[string]interface{}{"url": reqURL, "method": http.MethodPut})
 	req, err := http.NewRequest(http.MethodPut, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, err
@@ -260,7 +256,6 @@ func isSuccessStatus(code int) bool {
 
 func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string) error {
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
-	tflog.Info(ctx, "Requesting URL", map[string]interface{}{"url": reqURL, "method": http.MethodDelete})
 	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
 	if err != nil {
 		return err

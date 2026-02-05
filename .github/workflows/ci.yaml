@@ -1,0 +1,31 @@
+name: Build and test the Funnel Terraform Provider
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: 
+      - main
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: go test -v ./...

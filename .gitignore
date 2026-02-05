@@ -1,0 +1,12 @@
+# Binaries for programs and plugins
+terraform-provider-funnel
+
+# Go workspace file
+go.work
+go.work.sum
+
+# env file
+.env
+
+# macOS files
+.DS_Store

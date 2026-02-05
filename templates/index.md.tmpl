@@ -1,0 +1,71 @@
+---
+layout: ""
+page_title: "Provider: Funnel"
+description: |-
+  The Funnel provider provides configuration management resources for Funnel.
+---
+
+# Funnel Provider
+
+The changelog for this provider can be found here: <https://github.com/funnel-io/terraform-provider-funnel/releases>.
+
+## Example Usage
+
+```hcl
+provider "funnel" {
+  environment     = "us"
+  subscription_id = "subscription_id_here"
+  client_id       = var.client_id
+  client_secret   = var.client_secret
+}
+```
+
+## Authentication
+
+Get the integration credentials `client_id` and `client_secret` from Funnel for your subscription.
+In Funnel go to "Subscription overview" in the right top corner, select "Authentication" and create a new integration credential at the bottom of the page.
+
+## Subscriptions, workspaces and resource IDs
+
+The Funnel provider requires a `subscription_id` to be set in the provider configuration. Yours can be found in the URL if you go into the Subscription overview in the Funnel app.
+The URL will look something like this: `https://app.funnel.io/#/subscription/SUBSCRIPTION_ID/overview`.
+
+Funnel workspaces can't be created with Terraform currently, so you need to get the workspace ID from the Funnel app as well.
+Go into the workspace you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/#/account/WORKSPACE_ID/home`.
+
+Get resource IDs from the Funnel app as well. Above the table listing of resources there is a "Choose column" button where you can add the column "ID" that contains the resource IDs.
+You could also go into the resource you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/#/account/WORKSPACE_ID/RESOURCE_TYPE/RESOURCE_ID`.
+
+## Potential errors
+
+### Conflicting resources
+
+If you receive a `409 Conflict` error when creating resources it's because the target export conflicts with another one.
+The error message will contain information about which resource is conflicting. For a BigQuery export an error would be caused by two exports targeting the same dataset and table.
+
+## Flexpoints needed
+
+If you receive a `402 Payment Required` error when creating resources it's because your subscription does not have enough Flexpoints to create the resource.
+Go into the Funnel app and into the Flexpoints Usage in the Subscription overview to see how many Flexpoints you have and what resources consume Flexpoints.
+
+## Outdated Funnel Terraform Provider version
+
+If you receive an error like the one below when running `terraform plan` or `terraform apply`, please upgrade your Funnel Terraform Provider to the latest version.
+`Unable to read workspaces: terraform-provider-funnel version is too old. Minimum required: 0.1.0`
+
+## 429 Too Many Requests error
+
+If you receive a `429 Too Many Requests` error when making API calls, it means that you have exceeded the rate limit for the Funnel API. 
+If it happens frequently, consider contacing Funnel support to discuss your use case.
+
+##### Import command
+
+The ID format for importing Funnel resources is `<workspace_id>/<resource_id>`.
+
+Run the following command to import exports into your Terraform state:
+
+```bash
+terraform import funnel_<type>_export.<name> <workspace_id>/<export_id>
+```
+
+{{ .SchemaMarkdown | trimspace }}

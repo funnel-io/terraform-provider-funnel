@@ -36,6 +36,68 @@ Go into the workspace you want to manage with Terraform and get the ID from the 
 Get resource IDs from the Funnel app as well. Above the table listing of resources there is a "Choose column" button where you can add the column "ID" that contains the resource IDs.
 You could also go into the resource you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/#/account/WORKSPACE_ID/RESOURCE_TYPE/RESOURCE_ID`.
 
+## Exports
+
+Exports are created with the `funnel_<type>_export` resource. The available types are `bigquery`, `snowflake` and `gcs`. All the fields outside of the `destination` block are shared with the other export types.
+
+## Fields
+
+The data source `funnel_export_field` can be used to get the fields for an export. Lists of fields are then used in the `fields` block of the export resources.
+
+The "export_name" will be "Date" as fallback because that's the name of the field in Funnel:
+```hcl
+data "funnel_export_field" "date_field" {
+  workspace   = local.workspace_id
+  id          = local.field_date_id
+}
+```
+
+Setting a new "export_name" for the field to use as the column name in the export:
+```hcl
+data "funnel_export_field" "adtriba_brand_field" {
+  workspace   = local.workspace_id
+  id          = local.field_adtriba_brand_id
+  export_name = "TF_ADTRIBA_BRAND"
+}
+```
+
+Setting both a new "export_name" and "export_type" for the field to use as the column name and type in the export:
+```hcl
+data "funnel_export_field" "clicks_field" {
+  workspace   = local.workspace_id
+  id          = local.field_clicks_id
+  export_name = "TF_CLICKS"
+  export_type = "BIGINT"
+}
+```
+
+# Filters
+
+Filters are used to filter the data that is exported. They are used in the `filters` block of the export resources.
+Example of an AND filter of two filters on two fields:
+
+```hcl
+filters = [
+    {
+      field_id = local.field_adtriba_brand_id
+      or = [
+        {
+          operation = "contains"
+          value     = "company_a"
+        },
+        {
+          operation = "notcontains"
+          value     = "company_b"
+      }]
+    },
+    {
+      field_id  = local.field_date_id
+      operation = "gt"
+      value     = "2025"
+    }
+  ]
+```
+
 ## Potential errors
 
 ### Conflicting resources

@@ -8,10 +8,10 @@ See [CHANGELOG.md](CHANGELOG.md) for full details
 
 ## Documentation
 
-To use this provider in your Terraform module, follow the documentation on [Terraform Registry](https://registry.terraform.io/providers/funnel/artifactory/latest/docs).
+To use this provider in your Terraform module, follow the documentation on [Terraform Registry](https://registry.terraform.io/providers/funnel-io/funnel/latest/docs).
 
 ## Contributors
-See the [contribution guide](CONTRIBUTIONS.md).
+See the [contribution guide](CONTRIBUTING.md).
 
 ## License
 

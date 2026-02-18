@@ -135,9 +135,9 @@ func GetWorkspaces(ctx context.Context, config *common.FunnelProviderModel) ([]F
 	var workspaces []FunnelWorkspace
 
 	// Parse the "data" array from the API response
-	if dataArray, ok := respObj["data"].([]interface{}); ok {
+	if dataArray, ok := respObj["data"].([]any); ok {
 		for _, item := range dataArray {
-			if workspaceObj, ok := item.(map[string]interface{}); ok {
+			if workspaceObj, ok := item.(map[string]any); ok {
 				workspace := FunnelWorkspace{}
 
 				// Extract ID directly from workspace object

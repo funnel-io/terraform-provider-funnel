@@ -16,7 +16,7 @@ func ConvertTFToJSON[TF any, JSON any](tf TF) (JSON, error) {
 		{
 			SrcType: types.String{},
 			DstType: string(""),
-			Fn: func(src interface{}) (interface{}, error) {
+			Fn: func(src any) (any, error) {
 				s, ok := src.(types.String)
 
 				if !ok {
@@ -29,7 +29,7 @@ func ConvertTFToJSON[TF any, JSON any](tf TF) (JSON, error) {
 		{
 			SrcType: types.Int64{},
 			DstType: int64(0),
-			Fn: func(src interface{}) (interface{}, error) {
+			Fn: func(src any) (any, error) {
 				s, ok := src.(types.Int64)
 
 				if !ok {
@@ -42,7 +42,7 @@ func ConvertTFToJSON[TF any, JSON any](tf TF) (JSON, error) {
 		{
 			SrcType: types.Bool{},
 			DstType: bool(false),
-			Fn: func(src interface{}) (interface{}, error) {
+			Fn: func(src any) (any, error) {
 				s, ok := src.(types.Bool)
 
 				if !ok {
@@ -66,7 +66,7 @@ func ConvertJSONToTF[JSON any, TF any](json JSON) (TF, error) {
 		{
 			SrcType: string(""),
 			DstType: types.String{},
-			Fn: func(src interface{}) (interface{}, error) {
+			Fn: func(src any) (any, error) {
 				s, ok := src.(string)
 
 				if !ok {
@@ -79,7 +79,7 @@ func ConvertJSONToTF[JSON any, TF any](json JSON) (TF, error) {
 		{
 			SrcType: int64(0),
 			DstType: types.Int64{},
-			Fn: func(src interface{}) (interface{}, error) {
+			Fn: func(src any) (any, error) {
 				s, ok := src.(int64)
 
 				if !ok {
@@ -92,7 +92,7 @@ func ConvertJSONToTF[JSON any, TF any](json JSON) (TF, error) {
 		{
 			SrcType: bool(false),
 			DstType: types.Bool{},
-			Fn: func(src interface{}) (interface{}, error) {
+			Fn: func(src any) (any, error) {
 				s, ok := src.(bool)
 
 				if !ok {

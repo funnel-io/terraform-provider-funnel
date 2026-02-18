@@ -103,9 +103,9 @@ type ExportShared struct {
 
 // In Funnel the fields array and the range object are part of a query object.
 type QueryJSON struct {
-	Fields []ExportFieldJSON      `json:"fields"`
-	Range  ExportRangeJSON        `json:"range"`
-	Where  map[string]interface{} `json:"where,omitempty"`
+	Fields []ExportFieldJSON `json:"fields"`
+	Range  ExportRangeJSON   `json:"range"`
+	Where  map[string]any    `json:"where,omitempty"`
 }
 
 type ExportRangeJSON struct {

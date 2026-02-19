@@ -1,6 +1,6 @@
 module terraform-provider-funnel
 
-go 1.24.0
+go 1.26.0
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.24.0

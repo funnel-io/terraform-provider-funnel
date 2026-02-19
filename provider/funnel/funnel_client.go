@@ -16,7 +16,7 @@ const Version = "0.1.1"
 
 type APIError struct {
 	StatusCode int
-	Details    interface{}
+	Details    any
 	Message    string
 }
 
@@ -46,7 +46,7 @@ func ApplyHTTPHeaders(req *http.Request, token string) {
 	req.Header.Set("User-Agent", "terraform-provider-funnel/"+Version)
 }
 
-func GetSubscriptionEntities(ctx context.Context, entity string, config *common.FunnelProviderModel) (map[string]interface{}, error) {
+func GetSubscriptionEntities(ctx context.Context, entity string, config *common.FunnelProviderModel) (map[string]any, error) {
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), entity)
 	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
@@ -76,7 +76,7 @@ func GetSubscriptionEntities(ctx context.Context, entity string, config *common.
 	}
 
 	if resp.StatusCode == http.StatusBadRequest {
-		var respObj map[string]interface{}
+		var respObj map[string]any
 		if err := json.Unmarshal(body, &respObj); err == nil {
 			if errMsg, ok := respObj["error"].(string); ok {
 				return nil, fmt.Errorf("%s", errMsg)
@@ -85,7 +85,7 @@ func GetSubscriptionEntities(ctx context.Context, entity string, config *common.
 		return nil, fmt.Errorf("bad request")
 	}
 
-	var respObj map[string]interface{}
+	var respObj map[string]any
 	if err := json.Unmarshal(body, &respObj); err == nil {
 		return respObj, nil
 	}
@@ -125,7 +125,7 @@ func GetWorkspaceEntity[T any](ctx context.Context, entity string, config *commo
 	}
 
 	if resp.StatusCode == http.StatusBadRequest {
-		var errorObj map[string]interface{}
+		var errorObj map[string]any
 		if err := json.Unmarshal(body, &errorObj); err == nil {
 			if errMsg, ok := errorObj["error"].(string); ok {
 				return respObj, APIError{StatusCode: resp.StatusCode, Message: errMsg}
@@ -173,7 +173,7 @@ func CreateWorkspaceEntity[T any](ctx context.Context, entity string, config *co
 	defer resp.Body.Close()
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	if !isSuccessStatus(resp.StatusCode) {
-		var errorObj map[string]interface{}
+		var errorObj map[string]any
 		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
 			if resp.StatusCode == http.StatusBadRequest {
 				if errMsg, ok := errorObj["error"].(string); ok {
@@ -230,7 +230,7 @@ func UpdateWorkspaceEntity[T any](ctx context.Context, entity string, config *co
 	}
 
 	if resp.StatusCode == http.StatusBadRequest {
-		var errorObj map[string]interface{}
+		var errorObj map[string]any
 		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
 			if errMsg, ok := errorObj["error"].(string); ok {
 				return respObj, fmt.Errorf("%s", errMsg)
@@ -285,7 +285,7 @@ func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.Fu
 	}
 
 	if resp.StatusCode == http.StatusBadRequest {
-		var respObj map[string]interface{}
+		var respObj map[string]any
 		if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
 			if errMsg, ok := respObj["error"].(string); ok {
 				return fmt.Errorf("%s", errMsg)

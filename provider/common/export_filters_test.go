@@ -23,18 +23,18 @@ func TestConvertFiltersToMeld_WithMixedFilters(t *testing.T) {
 
 	result := ConvertFiltersToMeld(filters)
 
-	expected := map[string]interface{}{
-		"=and": []map[string]interface{}{
+	expected := map[string]any{
+		"=and": []map[string]any{
 			{
-				"brand_field": map[string]interface{}{
-					"=or": []map[string]interface{}{
+				"brand_field": map[string]any{
+					"=or": []map[string]any{
 						{"=contains": "burger king"},
 						{"=notcontains": "wendys"},
 					},
 				},
 			},
 			{
-				"date_field": map[string]interface{}{
+				"date_field": map[string]any{
 					"=after": "2025",
 				},
 			},
@@ -57,10 +57,10 @@ func TestConvertFiltersToMeld_SingleFilter(t *testing.T) {
 
 	result := ConvertFiltersToMeld(filters)
 
-	expected := map[string]interface{}{
-		"=and": []map[string]interface{}{
+	expected := map[string]any{
+		"=and": []map[string]any{
 			{
-				"status_field": map[string]interface{}{
+				"status_field": map[string]any{
 					"=equals": "active",
 				},
 			},
@@ -83,18 +83,18 @@ func TestConvertFiltersToMeld_EmptyFilters(t *testing.T) {
 }
 
 func TestConvertFiltersFromMeld_WithMixedFilters(t *testing.T) {
-	filters := map[string]interface{}{
-		"=and": []interface{}{
-			map[string]interface{}{
-				"brand_field": map[string]interface{}{
-					"=or": []interface{}{
-						map[string]interface{}{"=contains": "burger king"},
-						map[string]interface{}{"=notcontains": "wendys"},
+	filters := map[string]any{
+		"=and": []any{
+			map[string]any{
+				"brand_field": map[string]any{
+					"=or": []any{
+						map[string]any{"=contains": "burger king"},
+						map[string]any{"=notcontains": "wendys"},
 					},
 				},
 			},
-			map[string]interface{}{
-				"date_field": map[string]interface{}{
+			map[string]any{
+				"date_field": map[string]any{
 					"=after": "2025",
 				},
 			},
@@ -124,8 +124,8 @@ func TestConvertFiltersFromMeld_WithMixedFilters(t *testing.T) {
 }
 
 func TestConvertFiltersFromMeld_SingleFilter(t *testing.T) {
-	filters := map[string]interface{}{
-		"sourceKey": map[string]interface{}{
+	filters := map[string]any{
+		"sourceKey": map[string]any{
 			"=eq": "adwords:a0da9cc9-4140-4af6-9656-b6933aa5e52d",
 		},
 	}
@@ -146,7 +146,7 @@ func TestConvertFiltersFromMeld_SingleFilter(t *testing.T) {
 }
 
 func TestConvertFiltersFromMeld_EmptyFilters(t *testing.T) {
-	filters := map[string]interface{}{}
+	filters := map[string]any{}
 
 	result := ConvertFiltersFromMeld(filters)
 

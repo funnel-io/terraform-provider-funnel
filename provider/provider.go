@@ -111,5 +111,6 @@ func (p *funnelProvider) Resources(ctx context.Context) []func() resource.Resour
 		resources.NewGCSResource,
 		resources.NewBigqueryResource,
 		resources.NewSnowflakeResource,
+		resources.NewDataSourceResource,
 	}
 }

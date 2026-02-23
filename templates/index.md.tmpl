@@ -11,10 +11,21 @@ The changelog for this provider can be found here: <https://github.com/funnel-io
 
 ## Example Usage
 
+For Terraform v0.13 and later:
+
 ```hcl
+terraform {
+  required_providers {
+    funnel = {
+      source = "funnel-io/funnel"
+      version = "0.1.2"
+    }
+  }
+}
+
 provider "funnel" {
   environment     = "us"
-  subscription_id = "subscription_id_here"
+  subscription_id = "your_subscription_id_here"
   client_id       = var.client_id
   client_secret   = var.client_secret
 }

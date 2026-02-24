@@ -108,6 +108,7 @@ func (p *funnelProvider) DataSources(ctx context.Context) []func() datasource.Da
 
 func (p *funnelProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		resources.NewWorkspaceResource,
 		resources.NewGCSResource,
 		resources.NewBigqueryResource,
 		resources.NewSnowflakeResource,

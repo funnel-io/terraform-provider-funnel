@@ -30,8 +30,8 @@ In Funnel go to "Subscription overview" in the right top corner, select "Authent
 The Funnel provider requires a `subscription_id` to be set in the provider configuration. Yours can be found in the URL if you go into the Subscription overview in the Funnel app.
 The URL will look something like this: `https://app.funnel.io/#/subscription/SUBSCRIPTION_ID/overview`.
 
-Funnel workspaces can't be created with Terraform currently, so you need to get the workspace ID from the Funnel app as well.
-Go into the workspace you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/#/account/WORKSPACE_ID/home`.
+Funnel workspaces can be managed with the `funnel_workspace` resource.
+If you already have a workspace, you can get the ID from the URL and import it. The URL will look something like this: `https://app.funnel.io/#/account/WORKSPACE_ID/home`.
 
 Get resource IDs from the Funnel app as well. Above the table listing of resources there is a "Choose column" button where you can add the column "ID" that contains the resource IDs.
 You could also go into the resource you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/#/account/WORKSPACE_ID/RESOURCE_TYPE/RESOURCE_ID`.

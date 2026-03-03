@@ -1,5 +1,34 @@
 # Contributing
 
+## Commits
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/). Each commit message should be structured as:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+```
+
+Common types:
+
+| Type | Purpose |
+|------|---------|
+| `feat` | A new feature |
+| `fix` | A bug fix |
+| `docs` | Documentation only changes |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `test` | Adding or updating tests |
+| `chore` | Maintenance tasks (deps, CI, tooling) |
+
+Examples:
+
+```
+feat(data_source): add connection data source
+fix: handle nil response from API
+chore: bump Go to 1.23
+```
+
 ## Logging
 
 Use the "tflog” package to write logs for your provider.

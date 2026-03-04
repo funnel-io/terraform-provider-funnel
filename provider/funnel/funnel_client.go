@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const Version = "0.1.2"
+const Version = "0.1.4"
 
 type APIError struct {
 	StatusCode int
@@ -44,53 +44,6 @@ func ApplyHTTPHeaders(req *http.Request, token string) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "terraform-provider-funnel/"+Version)
-}
-
-func GetSubscriptionEntities(ctx context.Context, entity string, config *common.FunnelProviderModel) (map[string]any, error) {
-	reqURL := fmt.Sprintf("%s/subscriptions/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), entity)
-	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	ApplyHTTPHeaders(req, config.Token)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		tflog.Error(ctx, fmt.Sprintf("Error reaching GET endpoint: %s", err))
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, nil
-	}
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, fmt.Errorf("Unauthorized")
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return nil, fmt.Errorf("too many requests")
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
-		var respObj map[string]any
-		if err := json.Unmarshal(body, &respObj); err == nil {
-			if errMsg, ok := respObj["error"].(string); ok {
-				return nil, fmt.Errorf("%s", errMsg)
-			}
-		}
-		return nil, fmt.Errorf("bad request")
-	}
-
-	var respObj map[string]any
-	if err := json.Unmarshal(body, &respObj); err == nil {
-		return respObj, nil
-	}
-
-	return nil, nil
 }
 
 func GetSubscriptionEntity(ctx context.Context, entity string, subscriptionId string, id string, config *common.FunnelProviderModel) (map[string]any, error) {

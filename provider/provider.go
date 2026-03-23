@@ -102,6 +102,7 @@ func (p *funnelProvider) Configure(ctx context.Context, req provider.ConfigureRe
 func (p *funnelProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		datasources.NewExportFieldDataSource,
+		datasources.NewWorkspaceDataSource,
 	}
 }
 

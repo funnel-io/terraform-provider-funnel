@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -38,7 +39,7 @@ type DataSourceResourceModel struct {
 	Name             types.String `tfsdk:"name"`
 	IsDemo           types.Bool   `tfsdk:"is_demo"`
 	DownloadDisabled types.Bool   `tfsdk:"download_disabled"`
-	Definition       types.Map    `tfsdk:"definition"`
+	Definition       types.String `tfsdk:"definition"`
 	RemoteId         types.String `tfsdk:"remote_id"`
 	ExcludeFromMeld  types.Bool   `tfsdk:"exclude_from_meld"`
 	State            types.String `tfsdk:"state"`
@@ -61,18 +62,14 @@ type DataSourceJSON struct {
 	Batchfill        bool                   `json:"batchfill"`
 }
 
-type SourceObject struct {
+type CreateDataSourceRequest struct {
+	FunnelAccountId  string                 `json:"funnelAccountId"`
 	Type             string                 `json:"type"`
 	Name             string                 `json:"name"`
 	IsDemo           bool                   `json:"isDemo,omitempty"`
 	DownloadDisabled bool                   `json:"downloadDisabled,omitempty"`
 	Definition       map[string]interface{} `json:"definition,omitempty"`
 	RemoteId         string                 `json:"remoteId,omitempty"`
-}
-
-type CreateDataSourceRequest struct {
-	FunnelAccountId string       `json:"funnelAccountId"`
-	Source          SourceObject `json:"source"`
 }
 
 type UpdateDataSourceRequest struct {
@@ -135,9 +132,8 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Optional:            true,
 				Computed:            true,
 			},
-			"definition": schema.MapAttribute{
-				MarkdownDescription: "Data source configuration definition",
-				ElementType:         types.StringType,
+			"definition": schema.StringAttribute{
+				MarkdownDescription: "Data source configuration definition (JSON string)",
 				Optional:            true,
 				Computed:            true,
 			},
@@ -189,36 +185,33 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	// Build the source object
-	sourceObj := SourceObject{
-		Type: data.SourceType.ValueString(),
-		Name: data.Name.ValueString(),
+	payload := CreateDataSourceRequest{
+		FunnelAccountId: data.Workspace.ValueString(),
+		Type:            data.SourceType.ValueString(),
+		Name:            data.Name.ValueString(),
 	}
 
 	// Add optional fields if provided
 	if !data.IsDemo.IsNull() && !data.IsDemo.IsUnknown() {
-		sourceObj.IsDemo = data.IsDemo.ValueBool()
+		payload.IsDemo = data.IsDemo.ValueBool()
 	}
 	if !data.DownloadDisabled.IsNull() && !data.DownloadDisabled.IsUnknown() {
-		sourceObj.DownloadDisabled = data.DownloadDisabled.ValueBool()
+		payload.DownloadDisabled = data.DownloadDisabled.ValueBool()
 	}
 	if !data.RemoteId.IsNull() && !data.RemoteId.IsUnknown() {
-		sourceObj.RemoteId = data.RemoteId.ValueString()
+		payload.RemoteId = data.RemoteId.ValueString()
 	}
 	if !data.Definition.IsNull() && !data.Definition.IsUnknown() {
-		// Convert types.Map to map[string]interface{}
-		definitionMap := make(map[string]interface{})
-		diags := data.Definition.ElementsAs(ctx, &definitionMap, false)
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
+		// Parse JSON string to map[string]interface{}
+		var definitionMap map[string]interface{}
+		if err := json.Unmarshal([]byte(data.Definition.ValueString()), &definitionMap); err != nil {
+			resp.Diagnostics.AddError(
+				"Invalid Definition JSON",
+				"Could not parse definition as JSON: "+err.Error(),
+			)
 			return
 		}
-		sourceObj.Definition = definitionMap
-	}
-
-	payload := CreateDataSourceRequest{
-		FunnelAccountId: data.Workspace.ValueString(),
-		Source:          sourceObj,
+		payload.Definition = definitionMap
 	}
 
 	respObj, err := funnel.CreateWorkspaceEntity[CreateDataSourceRequest, DataSourceJSON](ctx, "datasources", r.config, data.Workspace.ValueString(), payload)
@@ -273,7 +266,7 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 
 	// Definition is not returned in the response, so keep what was sent or set to null
 	if data.Definition.IsNull() || data.Definition.IsUnknown() {
-		data.Definition = types.MapNull(types.StringType)
+		data.Definition = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -334,7 +327,7 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
 	// Keep definition from state as it's not returned in the response
 	// If it's unknown or null in state, set to null
 	if data.Definition.IsNull() || data.Definition.IsUnknown() {
-		data.Definition = types.MapNull(types.StringType)
+		data.Definition = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -366,11 +359,13 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	if !data.Definition.IsNull() && !data.Definition.IsUnknown() {
-		// Convert types.Map to map[string]interface{}
-		definitionMap := make(map[string]interface{})
-		diags := data.Definition.ElementsAs(ctx, &definitionMap, false)
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
+		// Parse JSON string to map[string]interface{}
+		var definitionMap map[string]interface{}
+		if err := json.Unmarshal([]byte(data.Definition.ValueString()), &definitionMap); err != nil {
+			resp.Diagnostics.AddError(
+				"Invalid Definition JSON",
+				"Could not parse definition as JSON: "+err.Error(),
+			)
 			return
 		}
 		payload.Definition = &definitionMap
@@ -419,7 +414,7 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	// Definition is not returned in the response, so keep what was sent or set to null
 	if data.Definition.IsNull() || data.Definition.IsUnknown() {
-		data.Definition = types.MapNull(types.StringType)
+		data.Definition = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -493,7 +488,7 @@ func (r *DataSourceResource) ImportState(ctx context.Context, req resource.Impor
 		State:            types.StringValue(ds.State),
 		CredentialId:     credentialId,
 		RemoteId:         remoteId,
-		Definition:       types.MapNull(types.StringType),
+		Definition:       types.StringNull(),
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

@@ -113,11 +113,8 @@ func (p *funnelProvider) Resources(ctx context.Context) []func() resource.Resour
 		resources.NewBigqueryResource,
 		resources.NewMeasurementResource,
 		resources.NewSnowflakeResource,
-<<<<<<< HEAD
 		resources.NewDataSourceResource,
-=======
 		resources.NewCustomDimensionResource,
 		resources.NewCustomMetricResource,
->>>>>>> main
 	}
 }

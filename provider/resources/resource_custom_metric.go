@@ -138,7 +138,7 @@ func (r *CustomMetricResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	tflog.Info(ctx, "Creating custom metric", map[string]any{"name": payload.Name})
-	respObj, apiErr := funnel.CreateWorkspaceEntity(ctx, "custom-fields", r.config, data.Workspace.ValueString(), payload)
+	respObj, apiErr := funnel.CreateWorkspaceEntity[FunnelCustomMetricJSON, FunnelCustomMetricJSON](ctx, "custom-fields", r.config, data.Workspace.ValueString(), payload)
 	if apiErr != nil {
 		resp.Diagnostics.AddError(
 			"Error Creating Custom Metric",
@@ -208,7 +208,7 @@ func (r *CustomMetricResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	tflog.Info(ctx, "Updating custom metric", map[string]any{"id": data.Id.ValueString(), "name": payload.Name})
-	_, err := funnel.UpdateWorkspaceEntity(ctx, "custom-fields", r.config, data.Workspace.ValueString(), data.Id.ValueString(), payload)
+	_, err := funnel.UpdateWorkspaceEntity[FunnelCustomMetricJSON, FunnelCustomMetricJSON](ctx, "custom-fields", r.config, data.Workspace.ValueString(), data.Id.ValueString(), payload)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Updating Custom Metric",

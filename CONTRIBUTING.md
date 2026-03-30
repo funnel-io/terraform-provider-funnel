@@ -29,6 +29,12 @@ fix: handle nil response from API
 chore: bump Go to 1.23
 ```
 
+## Documentation
+
+To preview the documentation for the Terraform registry use this [site](https://registry.terraform.io/tools/doc-preview).
+
+Add example HCL in the `examples/` folder for every data source and resource.
+
 ## Logging
 
 Use the "tflog” package to write logs for your provider.

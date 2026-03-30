@@ -31,6 +31,7 @@ type ExportSnowflakeDestination struct {
 	SchemaName          types.String `tfsdk:"schema_name"`
 	Username            types.String `tfsdk:"username"`
 	PersonalAccessToken types.String `tfsdk:"personal_access_token"`
+	PrivateKey          types.String `tfsdk:"private_key"`
 }
 
 type SnowflakeResourceModel struct {
@@ -46,6 +47,7 @@ type FunnelSnowflakeDestinationJSON struct {
 	SchemaName          string `json:"schemaName"`
 	Username            string `json:"username"`
 	PersonalAccessToken string `json:"password"`
+	PrivateKey          string `json:"privateKey"`
 	Version             string `json:"version"`
 }
 
@@ -59,43 +61,44 @@ func (r *SnowflakeResource) Metadata(ctx context.Context, req resource.MetadataR
 }
 
 func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	type_description := "Snowflake export. For authentication we recommend using Snowflake Personal Access Token (PAT) instead of a private key."
+
 	resp.Schema = common.GetExportSchema(schema.SingleNestedAttribute{
-		MarkdownDescription: "Snowflake destination table",
-		Required:            true,
+		Description: "Snowflake destination table",
+		Required:    true,
 		Attributes: map[string]schema.Attribute{
 			"account_locator": schema.StringAttribute{
-				MarkdownDescription: "Snowflake Account Identifier",
-				Description:         "Account Locator or Organisation Name and Account Name separated by a period",
-				Required:            true,
+				Description: "Account Locator or Organisation Name and Account Name separated by a period",
+				Required:    true,
 			},
 			"table_name": schema.StringAttribute{
-				MarkdownDescription: "Snowflake table name",
-				Description:         "Table name to export data to",
-				Required:            true,
+				Description: "Table name to export data to",
+				Required:    true,
 			},
 			"database": schema.StringAttribute{
-				MarkdownDescription: "Snowflake database name",
-				Description:         "Database name to export data to",
-				Required:            true,
+				Description: "Database name to export data to",
+				Required:    true,
 			},
 			"schema_name": schema.StringAttribute{
-				MarkdownDescription: "Snowflake schema name",
-				Description:         "Schema name to export data to",
-				Required:            true,
+				Description: "Schema name to export data to",
+				Required:    true,
 			},
 			"username": schema.StringAttribute{
-				MarkdownDescription: "Snowflake user name",
-				Description:         "User name to export data to",
-				Required:            true,
+				Description: "User name to export data to",
+				Required:    true,
 			},
 			"personal_access_token": schema.StringAttribute{
-				MarkdownDescription: "Snowflake Personal Access Token (PAT)",
-				Description:         "Personal Access Token (PAT) to export data to",
-				Required:            true,
-				Sensitive:           true,
+				Description: "Snowflake Personal Access Token (PAT)",
+				Optional:    true,
+				Sensitive:   true,
+			},
+			"private_key": schema.StringAttribute{
+				Description: "Snowflake private key. We recommend using Snowflake Personal Access Token (PAT) instead of a private key.",
+				Optional:    true,
+				Sensitive:   true,
 			},
 		},
-	}, "Snowflake export")
+	}, type_description)
 }
 
 func (r *SnowflakeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {

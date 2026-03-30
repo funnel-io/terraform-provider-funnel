@@ -2,11 +2,12 @@ package resources
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -29,6 +30,12 @@ type WorkspaceResource struct {
 type WorkspaceResourceModel struct {
 	Id   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
+}
+
+type FunnelWorkspaceJSON struct {
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	SubscriptionId string `json:"subscription_id"`
 }
 
 func (r *WorkspaceResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -78,11 +85,12 @@ func (r *WorkspaceResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	payload := map[string]any{
-		"name": data.Name.ValueString(),
+	payload := FunnelWorkspaceJSON{
+		Name:           data.Name.ValueString(),
+		SubscriptionId: r.config.SubscriptionId.ValueString(),
 	}
 
-	tflog.Info(ctx, "Creating workspace", map[string]any{"payload": payload})
+	tflog.Info(ctx, "Creating workspace", map[string]any{"name": payload.Name})
 	respObj, apiErr := funnel.CreateSubscriptionEntity(ctx, "workspaces", r.config.SubscriptionId.ValueString(), payload, r.config)
 	if apiErr != nil {
 		if apiErr.StatusCode == 403 {
@@ -100,13 +108,9 @@ func (r *WorkspaceResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	id, ok := mapStringValue(respObj, "id", "workspaceId")
-	if !ok {
-		resp.Diagnostics.AddError("Error Creating Workspace", "Workspace create response did not include an ID")
-		return
-	}
-	data.Id = types.StringValue(id)
-	tflog.Info(ctx, "Created workspace", map[string]any{"id": id})
+	data.Id = types.StringValue(respObj.Id)
+	data.Name = types.StringValue(respObj.Name)
+	tflog.Info(ctx, "Created workspace", map[string]any{"id": respObj.Id})
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -119,8 +123,13 @@ func (r *WorkspaceResource) Read(ctx context.Context, req resource.ReadRequest, 
 	}
 
 	tflog.Info(ctx, "Reading workspace", map[string]any{"id": data.Id.ValueString()})
-	respObj, err := funnel.GetSubscriptionEntity(ctx, "workspaces", r.config.SubscriptionId.ValueString(), data.Id.ValueString(), r.config)
+	respObj, err := funnel.GetSubscriptionEntity[FunnelWorkspaceJSON](ctx, "workspaces", r.config.SubscriptionId.ValueString(), data.Id.ValueString(), r.config)
 	if err != nil {
+		var apiErr funnel.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"Error Reading Workspace",
 			"Could not read workspace ID "+data.Id.ValueString()+": "+err.Error(),
@@ -128,17 +137,8 @@ func (r *WorkspaceResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	if respObj == nil {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-
-	if id, ok := mapStringValue(respObj, "id", "workspaceId"); ok {
-		data.Id = types.StringValue(id)
-	}
-	if name, ok := mapStringValue(respObj, "name"); ok {
-		data.Name = types.StringValue(name)
-	}
+	data.Id = types.StringValue(respObj.Id)
+	data.Name = types.StringValue(respObj.Name)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -150,11 +150,12 @@ func (r *WorkspaceResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	payload := map[string]any{
-		"name": data.Name.ValueString(),
+	payload := FunnelWorkspaceJSON{
+		Id:   data.Id.ValueString(),
+		Name: data.Name.ValueString(),
 	}
 
-	tflog.Info(ctx, "Updating workspace", map[string]any{"id": data.Id.ValueString(), "payload": payload})
+	tflog.Info(ctx, "Updating workspace", map[string]any{"id": data.Id.ValueString(), "name": payload.Name})
 	_, err := funnel.UpdateSubscriptionEntity(ctx, "workspaces", r.config.SubscriptionId.ValueString(), data.Id.ValueString(), payload, r.config)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -186,15 +187,20 @@ func (r *WorkspaceResource) Delete(ctx context.Context, req resource.DeleteReque
 }
 
 func (r *WorkspaceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
-}
-
-func mapStringValue(obj map[string]any, keys ...string) (string, bool) {
-	for _, key := range keys {
-		if value, ok := obj[key].(string); ok && value != "" {
-			return value, true
-		}
+	tflog.Info(ctx, "Importing workspace", map[string]any{"id": req.ID})
+	respObj, err := funnel.GetSubscriptionEntity[FunnelWorkspaceJSON](ctx, "workspaces", r.config.SubscriptionId.ValueString(), req.ID, r.config)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Importing Workspace",
+			"Could not read workspace ID "+req.ID+": "+err.Error(),
+		)
+		return
 	}
-	return "", false
-}
 
+	data := WorkspaceResourceModel{
+		Id:   types.StringValue(respObj.Id),
+		Name: types.StringValue(respObj.Name),
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}

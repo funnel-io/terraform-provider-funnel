@@ -45,18 +45,18 @@ func TestCreateSubscriptionEntity_Workspaces_Success(t *testing.T) {
 		Token:       "Bearer test-token",
 	}
 
-	respObj, err := funnel.CreateSubscriptionEntity(
+	respObj, err := funnel.CreateSubscriptionEntity[FunnelWorkspaceJSON](
 		context.Background(),
 		"workspaces",
 		"sub-123",
-		map[string]any{"name": "Workspace A"},
+		FunnelWorkspaceJSON{Name: "Workspace A"},
 		config,
 	)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if respObj["id"] != "ws-123" {
-		t.Fatalf("expected id ws-123, got %v", respObj["id"])
+	if respObj.Id != "ws-123" {
+		t.Fatalf("expected id ws-123, got %v", respObj.Id)
 	}
 }
 
@@ -77,11 +77,11 @@ func TestCreateSubscriptionEntity_Workspaces_Forbidden(t *testing.T) {
 		Token:       "Bearer test-token",
 	}
 
-	_, err := funnel.CreateSubscriptionEntity(
+	_, err := funnel.CreateSubscriptionEntity[FunnelWorkspaceJSON](
 		context.Background(),
 		"workspaces",
 		"sub-123",
-		map[string]any{"name": "Workspace A"},
+		FunnelWorkspaceJSON{Name: "Workspace A"},
 		config,
 	)
 	if err == nil {

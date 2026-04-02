@@ -143,6 +143,9 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				MarkdownDescription: "Data source configuration definition (JSON string)",
 				Optional:            true,
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					JSONSemanticEqual(),
+				},
 			},
 			"remote_id": schema.StringAttribute{
 				MarkdownDescription: "Remote ID from the source system",
@@ -240,27 +243,14 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	// Set all response values
 	data.Id = types.StringValue(respObj.Key)
 	data.Workspace = types.StringValue(respObj.FunnelAccountId)
 	data.SourceType = types.StringValue(respObj.Type)
 	data.Name = types.StringValue(respObj.Name)
 	data.State = types.StringValue(respObj.State)
-
-	// For Optional+Computed fields: keep the planned value if user specified it,
-	// otherwise use the API response
-	if data.IsDemo.IsNull() || data.IsDemo.IsUnknown() {
-		data.IsDemo = types.BoolValue(respObj.IsDemo)
-	}
-	// If user specified is_demo, keep their value (don't override with API response)
-
-	if data.DownloadDisabled.IsNull() || data.DownloadDisabled.IsUnknown() {
-		data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
-	}
-
-	if data.ExcludeFromMeld.IsNull() || data.ExcludeFromMeld.IsUnknown() {
-		data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
-	}
+	data.IsDemo = types.BoolValue(respObj.IsDemo)
+	data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
+	data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
 
 	if respObj.ConnectionId != "" {
 		data.CredentialId = types.StringValue(respObj.ConnectionId)
@@ -274,7 +264,6 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 		data.RemoteId = types.StringNull()
 	}
 
-	// Definition is not returned in the response, so keep what was sent or set to null
 	if data.Definition.IsNull() || data.Definition.IsUnknown() {
 		data.Definition = types.StringNull()
 	}

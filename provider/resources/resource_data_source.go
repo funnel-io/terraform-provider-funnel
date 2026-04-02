@@ -109,6 +109,9 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 			"source_type": schema.StringAttribute{
 				MarkdownDescription: "Source type (e.g. adwords, bigquery_ga4, test_connect_playground)",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
 						regexp.MustCompile(`^[A-Za-z0-9_-]{1,127}$`),

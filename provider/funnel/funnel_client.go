@@ -279,6 +279,8 @@ func CreateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 		return respObj, &APIError{Message: "Request failed", Details: err}
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode == http.StatusUnauthorized {
 		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Unauthorized"}
 	}
@@ -287,7 +289,6 @@ func CreateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Too Many Requests"}
 	}
 
-	defer resp.Body.Close()
 	bodyBytes, _ := io.ReadAll(resp.Body)
 
 	// Log the response for debugging
@@ -324,13 +325,14 @@ func CreateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 		}
 	}
 
-	if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
+	unmarshalErr := json.Unmarshal(bodyBytes, &respObj)
+	if unmarshalErr == nil {
 		tflog.Debug(ctx, fmt.Sprintf("Unmarshaled response: %+v", respObj))
 		return respObj, nil
 	}
 
-	tflog.Error(ctx, fmt.Sprintf("Failed to unmarshal response: %v", err))
-	return respObj, &APIError{Message: fmt.Sprintf("invalid response from create %s", entity)}
+	tflog.Error(ctx, fmt.Sprintf("Failed to unmarshal response: %v", unmarshalErr))
+	return respObj, &APIError{Message: fmt.Sprintf("invalid response from create %s", entity), Details: unmarshalErr}
 }
 
 func UpdateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string, data TReq) (TResp, error) {
@@ -387,7 +389,7 @@ func UpdateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 		return respObj, nil
 	}
 
-	return respObj, fmt.Errorf("invalid response from create %s", entity)
+	return respObj, fmt.Errorf("invalid response from update %s", entity)
 }
 
 func PatchWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string, data TReq) (TResp, error) {

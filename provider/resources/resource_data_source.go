@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -126,6 +127,9 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				MarkdownDescription: "Whether this is a demo data source",
 				Optional:            true,
 				Computed:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 			"download_disabled": schema.BoolAttribute{
 				MarkdownDescription: "Whether download is disabled for this data source",
@@ -141,6 +145,9 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				MarkdownDescription: "Remote ID from the source system",
 				Optional:            true,
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -297,20 +304,9 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
 	data.SourceType = types.StringValue(ds.Type)
 	data.Name = types.StringValue(ds.Name)
 	data.State = types.StringValue(ds.State)
-
-	// For Optional+Computed fields: keep the current state value if it was set,
-	// otherwise use the API response
-	if data.IsDemo.IsNull() || data.IsDemo.IsUnknown() {
-		data.IsDemo = types.BoolValue(ds.IsDemo)
-	}
-
-	if data.DownloadDisabled.IsNull() || data.DownloadDisabled.IsUnknown() {
-		data.DownloadDisabled = types.BoolValue(ds.DownloadDisabled)
-	}
-
-	if data.ExcludeFromMeld.IsNull() || data.ExcludeFromMeld.IsUnknown() {
-		data.ExcludeFromMeld = types.BoolValue(ds.ExcludeFromMeld)
-	}
+	data.IsDemo = types.BoolValue(ds.IsDemo)
+	data.DownloadDisabled = types.BoolValue(ds.DownloadDisabled)
+	data.ExcludeFromMeld = types.BoolValue(ds.ExcludeFromMeld)
 
 	if ds.ConnectionId != "" {
 		data.CredentialId = types.StringValue(ds.ConnectionId)
@@ -380,25 +376,13 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	// Update state with response data
 	data.Workspace = types.StringValue(respObj.FunnelAccountId)
 	data.SourceType = types.StringValue(respObj.Type)
 	data.Name = types.StringValue(respObj.Name)
 	data.State = types.StringValue(respObj.State)
-
-	// For Optional+Computed fields: keep the planned value if user specified it,
-	// otherwise use the API response
-	if data.IsDemo.IsNull() || data.IsDemo.IsUnknown() {
-		data.IsDemo = types.BoolValue(respObj.IsDemo)
-	}
-
-	if data.DownloadDisabled.IsNull() || data.DownloadDisabled.IsUnknown() {
-		data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
-	}
-
-	if data.ExcludeFromMeld.IsNull() || data.ExcludeFromMeld.IsUnknown() {
-		data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
-	}
+	data.IsDemo = types.BoolValue(respObj.IsDemo)
+	data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
+	data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
 
 	if respObj.ConnectionId != "" {
 		data.CredentialId = types.StringValue(respObj.ConnectionId)
@@ -412,7 +396,6 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 		data.RemoteId = types.StringNull()
 	}
 
-	// Definition is not returned in the response, so keep what was sent or set to null
 	if data.Definition.IsNull() || data.Definition.IsUnknown() {
 		data.Definition = types.StringNull()
 	}

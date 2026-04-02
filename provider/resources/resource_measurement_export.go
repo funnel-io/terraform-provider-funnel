@@ -279,7 +279,7 @@ func createMeasurementExport(ctx context.Context, config *common.FunnelProviderM
 
 	prepareMeasurementExportData(&data, model)
 
-	return funnel.CreateWorkspaceEntity(ctx, "exports", config, model.Workspace.ValueString(), data)
+	return funnel.CreateWorkspaceEntity[FunnelMeasurementJSON, FunnelMeasurementJSON](ctx, "exports", config, model.Workspace.ValueString(), data)
 }
 
 func updateMeasurementExport(ctx context.Context, config *common.FunnelProviderModel, model MeasurementResourceModel) (FunnelMeasurementJSON, error) {
@@ -290,7 +290,7 @@ func updateMeasurementExport(ctx context.Context, config *common.FunnelProviderM
 
 	prepareMeasurementExportData(&data, model)
 
-	return funnel.UpdateWorkspaceEntity(ctx, "exports", config, model.Workspace.ValueString(), model.Id.ValueString(), data)
+	return funnel.UpdateWorkspaceEntity[FunnelMeasurementJSON, FunnelMeasurementJSON](ctx, "exports", config, model.Workspace.ValueString(), model.Id.ValueString(), data)
 }
 
 func deleteMeasurementExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) error {

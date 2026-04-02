@@ -253,14 +253,19 @@ func GetWorkspaceEntity[T any](ctx context.Context, entity string, config *commo
 	return respObj, nil
 }
 
-func CreateWorkspaceEntity[T any](ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, data T) (T, *APIError) {
-	var respObj T
+func CreateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, data TReq) (TResp, *APIError) {
+	var respObj TResp
 	body, err := json.Marshal(data)
 	if err != nil {
 		return respObj, &APIError{Message: "Failed to marshal request body", Details: err}
 	}
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity)
+
+	// Log the request for debugging
+	tflog.Debug(ctx, fmt.Sprintf("Create request URL: %s", reqURL))
+	tflog.Debug(ctx, fmt.Sprintf("Create request body: %s", string(body)))
+
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, &APIError{Message: "Failed to create request", Details: err}
@@ -274,6 +279,8 @@ func CreateWorkspaceEntity[T any](ctx context.Context, entity string, config *co
 		return respObj, &APIError{Message: "Request failed", Details: err}
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode == http.StatusUnauthorized {
 		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Unauthorized"}
 	}
@@ -282,8 +289,28 @@ func CreateWorkspaceEntity[T any](ctx context.Context, entity string, config *co
 		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Too Many Requests"}
 	}
 
-	defer resp.Body.Close()
 	bodyBytes, _ := io.ReadAll(resp.Body)
+
+	// Log the response for debugging
+	tflog.Debug(ctx, fmt.Sprintf("Create response status: %d", resp.StatusCode))
+	tflog.Debug(ctx, fmt.Sprintf("Create response body: %s", string(bodyBytes)))
+
+	// Check if response contains an error structure even with success status code
+	var errorCheck map[string]any
+	if err := json.Unmarshal(bodyBytes, &errorCheck); err == nil {
+		if errorMsg, hasError := errorCheck["error"].(string); hasError {
+			statusCode := resp.StatusCode
+			if sc, ok := errorCheck["statusCode"].(float64); ok {
+				statusCode = int(sc)
+			}
+			message := errorMsg
+			if msg, ok := errorCheck["message"].(string); ok {
+				message = msg
+			}
+			return respObj, &APIError{StatusCode: statusCode, Message: message, Details: errorCheck}
+		}
+	}
+
 	if !isSuccessStatus(resp.StatusCode) {
 		var errorObj map[string]any
 		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
@@ -292,21 +319,24 @@ func CreateWorkspaceEntity[T any](ctx context.Context, entity string, config *co
 					return respObj, &APIError{StatusCode: resp.StatusCode, Message: errMsg, Details: errorObj}
 				}
 			}
-			return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Create failed", Details: respObj}
+			return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Create failed", Details: errorObj}
 		} else {
 			return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Create failed", Details: string(bodyBytes)}
 		}
 	}
 
-	if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
+	unmarshalErr := json.Unmarshal(bodyBytes, &respObj)
+	if unmarshalErr == nil {
+		tflog.Debug(ctx, fmt.Sprintf("Unmarshaled response: %+v", respObj))
 		return respObj, nil
 	}
 
-	return respObj, &APIError{Message: fmt.Sprintf("invalid response from create %s", entity)}
+	tflog.Error(ctx, fmt.Sprintf("Failed to unmarshal response: %v", unmarshalErr))
+	return respObj, &APIError{Message: fmt.Sprintf("invalid response from create %s", entity), Details: unmarshalErr}
 }
 
-func UpdateWorkspaceEntity[T any](ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string, data T) (T, error) {
-	var respObj T
+func UpdateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string, data TReq) (TResp, error) {
+	var respObj TResp
 	body, err := json.Marshal(data)
 	if err != nil {
 		return respObj, err
@@ -359,7 +389,64 @@ func UpdateWorkspaceEntity[T any](ctx context.Context, entity string, config *co
 		return respObj, nil
 	}
 
-	return respObj, fmt.Errorf("invalid response from create %s", entity)
+	return respObj, fmt.Errorf("invalid response from update %s", entity)
+}
+
+func PatchWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string, data TReq) (TResp, error) {
+	var respObj TResp
+	body, err := json.Marshal(data)
+	if err != nil {
+		return respObj, err
+	}
+
+	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
+	req, err := http.NewRequest(http.MethodPatch, reqURL, bytes.NewBuffer(body))
+	if err != nil {
+		return respObj, err
+	}
+
+	ApplyHTTPHeaders(req, config.Token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		tflog.Error(ctx, fmt.Sprintf("Error updating %s: %s", entity, err))
+		return respObj, err
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return respObj, fmt.Errorf("Unauthorized")
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return respObj, fmt.Errorf("not found")
+	}
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return respObj, fmt.Errorf("too many requests")
+	}
+
+	if resp.StatusCode == http.StatusBadRequest {
+		var errorObj map[string]any
+		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
+			if errMsg, ok := errorObj["error"].(string); ok {
+				return respObj, fmt.Errorf("%s", errMsg)
+			}
+		}
+		return respObj, fmt.Errorf("bad request")
+	}
+
+	if !isSuccessStatus(resp.StatusCode) {
+		return respObj, fmt.Errorf("update failed with status: %d", resp.StatusCode)
+	}
+
+	if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
+		return respObj, nil
+	}
+
+	return respObj, fmt.Errorf("invalid response from update %s", entity)
 }
 
 func isSuccessStatus(code int) bool {
@@ -410,6 +497,11 @@ func DeleteSubscriptionEntity(ctx context.Context, entity string, subscriptionId
 
 func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string) error {
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
+
+	// Log the request for debugging
+	tflog.Debug(ctx, fmt.Sprintf("Delete request URL: %s", reqURL))
+	tflog.Debug(ctx, "Delete request method: DELETE")
+
 	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
 	if err != nil {
 		return err
@@ -426,6 +518,26 @@ func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.Fu
 	defer resp.Body.Close()
 	bodyBytes, _ := io.ReadAll(resp.Body)
 
+	// Log the response for debugging
+	tflog.Debug(ctx, fmt.Sprintf("Delete response status: %d", resp.StatusCode))
+	tflog.Debug(ctx, fmt.Sprintf("Delete response body: %s", string(bodyBytes)))
+
+	// Check if response contains an error structure even with success status code
+	var errorCheck map[string]any
+	if err := json.Unmarshal(bodyBytes, &errorCheck); err == nil {
+		if errorMsg, hasError := errorCheck["error"].(string); hasError {
+			statusCode := resp.StatusCode
+			if sc, ok := errorCheck["statusCode"].(float64); ok {
+				statusCode = int(sc)
+			}
+			message := errorMsg
+			if msg, ok := errorCheck["message"].(string); ok {
+				message = msg
+			}
+			return fmt.Errorf("delete failed: %s (status: %d)", message, statusCode)
+		}
+	}
+
 	if resp.StatusCode == http.StatusUnauthorized {
 		return fmt.Errorf("Unauthorized")
 	}
@@ -435,6 +547,7 @@ func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.Fu
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
+		// 404 is OK - idempotent delete
 		return nil
 	}
 
@@ -448,5 +561,10 @@ func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.Fu
 		return fmt.Errorf("bad request")
 	}
 
-	return err
+	// Check for success status
+	if !isSuccessStatus(resp.StatusCode) {
+		return fmt.Errorf("delete failed with status: %d, body: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
 }

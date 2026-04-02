@@ -300,7 +300,7 @@ func createBigqueryExport(ctx context.Context, config *common.FunnelProviderMode
 
 	prepareBigqueryExportData(&data, model)
 
-	return funnel.CreateWorkspaceEntity(ctx, "exports", config, model.Workspace.ValueString(), data)
+	return funnel.CreateWorkspaceEntity[FunnelBigqueryJSON, FunnelBigqueryJSON](ctx, "exports", config, model.Workspace.ValueString(), data)
 }
 
 func updateBigqueryExport(ctx context.Context, config *common.FunnelProviderModel, model BigqueryResourceModel) (FunnelBigqueryJSON, error) {
@@ -311,7 +311,7 @@ func updateBigqueryExport(ctx context.Context, config *common.FunnelProviderMode
 
 	prepareBigqueryExportData(&data, model)
 
-	return funnel.UpdateWorkspaceEntity(ctx, "exports", config, model.Workspace.ValueString(), model.Id.ValueString(), data)
+	return funnel.UpdateWorkspaceEntity[FunnelBigqueryJSON, FunnelBigqueryJSON](ctx, "exports", config, model.Workspace.ValueString(), model.Id.ValueString(), data)
 }
 
 func deleteBigqueryExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) error {

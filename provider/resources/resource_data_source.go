@@ -9,6 +9,7 @@ import (
 	"strings"
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
+	"terraform-provider-funnel/provider/planmodifiers"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -144,7 +145,7 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					JSONSemanticEqual(),
+					planmodifiers.JSONSemanticEqual(),
 				},
 			},
 			"remote_id": schema.StringAttribute{

@@ -43,7 +43,7 @@ type DataSourceResourceModel struct {
 	DownloadDisabled types.Bool   `tfsdk:"download_disabled"`
 	Definition       types.String `tfsdk:"definition"`
 	RemoteId         types.String `tfsdk:"remote_id"`
-	ExcludeFromMeld  types.Bool   `tfsdk:"exclude_from_meld"`
+	ExcludeFromMeld  types.Bool   `tfsdk:"exclude_data_from_funnel"`
 	State            types.String `tfsdk:"state"`
 	CredentialId     types.String `tfsdk:"credential_id"`
 }
@@ -159,8 +159,8 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"exclude_from_meld": schema.BoolAttribute{
-				MarkdownDescription: "Whether to exclude this data source from meld",
+			"exclude_data_from_funnel": schema.BoolAttribute{
+				MarkdownDescription: "Whether to exclude data from Funnel for this data source",
 				Optional:            true,
 				Computed:            true,
 			},

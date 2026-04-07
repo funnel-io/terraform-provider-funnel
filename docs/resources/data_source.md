@@ -26,7 +26,7 @@ Funnel data source
 - `credential_id` (String) Credential ID (connection ID) - temporarily disabled
 - `definition` (String) Data source configuration definition (JSON string)
 - `download_disabled` (Boolean) Whether download is disabled for this data source
-- `exclude_from_meld` (Boolean) Whether to exclude this data source from meld
+- `exclude_data_from_funnel` (Boolean) Whether to exclude data from Funnel for this data source
 - `is_demo` (Boolean) Whether this is a demo data source
 - `remote_id` (String) Remote ID from the source system
 

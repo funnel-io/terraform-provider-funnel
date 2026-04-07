@@ -47,12 +47,12 @@ func (m jsonSemanticEqualModifier) PlanModifyString(ctx context.Context, req pla
 func jsonSemanticEquals(a, b string) bool {
 	var objA, objB interface{}
 
-	if err := json.Unmarshal([]byte(a), &objA); err != nil { // nosemgrep: go-unsafe-deserialization-interface
+	if err := json.Unmarshal([]byte(a), &objA); err != nil { // nosemgrep: go.lang.security.deserialization.unsafe-deserialization-interface.go-unsafe-deserialization-interface
 		// Safe: JSON unmarshaling in Go cannot execute code, data from trusted Terraform state/config
 		return false
 	}
 
-	if err := json.Unmarshal([]byte(b), &objB); err != nil { // nosemgrep: go-unsafe-deserialization-interface
+	if err := json.Unmarshal([]byte(b), &objB); err != nil { // nosemgrep: go.lang.security.deserialization.unsafe-deserialization-interface.go-unsafe-deserialization-interface
 		// Safe: JSON unmarshaling in Go cannot execute code, data from trusted Terraform state/config
 		return false
 	}

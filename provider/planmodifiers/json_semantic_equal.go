@@ -46,6 +46,7 @@ func (m jsonSemanticEqualModifier) PlanModifyString(ctx context.Context, req pla
 
 func jsonSemanticEquals(a, b string) bool {
 	var objA, objB interface{} // nosemgrep: go.lang.security.deserialization.unsafe-deserialization-interface.go-unsafe-deserialization-interface
+	// Safe: JSON unmarshaling in Go cannot execute code, data from trusted Terraform state/config
 
 	err := json.Unmarshal([]byte(a), &objA)
 	if err != nil {

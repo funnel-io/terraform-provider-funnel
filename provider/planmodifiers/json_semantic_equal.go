@@ -45,16 +45,15 @@ func (m jsonSemanticEqualModifier) PlanModifyString(ctx context.Context, req pla
 }
 
 func jsonSemanticEquals(a, b string) bool {
-	// nosemgrep: go-unsafe-deserialization-interface
-	// Safe: JSON unmarshaling in Go cannot execute code, and data comes from
-	// trusted Terraform state/config files for semantic comparison only
 	var objA, objB interface{}
 
-	if err := json.Unmarshal([]byte(a), &objA); err != nil {
+	if err := json.Unmarshal([]byte(a), &objA); err != nil { // nosemgrep: go-unsafe-deserialization-interface
+		// Safe: JSON unmarshaling in Go cannot execute code, data from trusted Terraform state/config
 		return false
 	}
 
-	if err := json.Unmarshal([]byte(b), &objB); err != nil {
+	if err := json.Unmarshal([]byte(b), &objB); err != nil { // nosemgrep: go-unsafe-deserialization-interface
+		// Safe: JSON unmarshaling in Go cannot execute code, data from trusted Terraform state/config
 		return false
 	}
 

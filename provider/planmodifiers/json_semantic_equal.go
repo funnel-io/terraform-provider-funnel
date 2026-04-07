@@ -47,12 +47,12 @@ func (m jsonSemanticEqualModifier) PlanModifyString(ctx context.Context, req pla
 func jsonSemanticEquals(a, b string) bool {
 	var objA, objB interface{} // nosemgrep: go.lang.security.deserialization.unsafe-deserialization-interface.go-unsafe-deserialization-interface
 
-	err := json.Unmarshal([]byte(a), &objA) // nosemgrep: go.lang.security.deserialization.unsafe-deserialization-interface.go-unsafe-deserialization-interface
+	err := json.Unmarshal([]byte(a), &objA)
 	if err != nil {
 		return false
 	}
 
-	err = json.Unmarshal([]byte(b), &objB) // nosemgrep: go.lang.security.deserialization.unsafe-deserialization-interface.go-unsafe-deserialization-interface
+	err = json.Unmarshal([]byte(b), &objB)
 	if err != nil {
 		return false
 	}

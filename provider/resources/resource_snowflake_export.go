@@ -322,7 +322,7 @@ func createSnowflakeExport(ctx context.Context, config *common.FunnelProviderMod
 
 	prepareSnowflakeExportData(&data, model)
 
-	return funnel.CreateWorkspaceEntity(ctx, "exports", config, model.Workspace.ValueString(), data)
+	return funnel.CreateWorkspaceEntity[FunnelSnowflakeJSON, FunnelSnowflakeJSON](ctx, "exports", config, model.Workspace.ValueString(), data)
 }
 
 func updateSnowflakeExport(ctx context.Context, config *common.FunnelProviderModel, model SnowflakeResourceModel) (FunnelSnowflakeJSON, error) {
@@ -333,7 +333,7 @@ func updateSnowflakeExport(ctx context.Context, config *common.FunnelProviderMod
 
 	prepareSnowflakeExportData(&data, model)
 
-	return funnel.UpdateWorkspaceEntity(ctx, "exports", config, model.Workspace.ValueString(), model.Id.ValueString(), data)
+	return funnel.UpdateWorkspaceEntity[FunnelSnowflakeJSON, FunnelSnowflakeJSON](ctx, "exports", config, model.Workspace.ValueString(), model.Id.ValueString(), data)
 }
 
 func deleteSnowflakeExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) error {

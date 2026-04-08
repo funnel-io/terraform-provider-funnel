@@ -305,7 +305,7 @@ func createExport(ctx context.Context, config *common.FunnelProviderModel, model
 
 	prepareGCSExportData(&data, model)
 
-	return funnel.CreateWorkspaceEntity(ctx, "exports", config, model.Workspace.ValueString(), data)
+	return funnel.CreateWorkspaceEntity[FunnelGCSJSON, FunnelGCSJSON](ctx, "exports", config, model.Workspace.ValueString(), data)
 }
 
 func updateExport(ctx context.Context, config *common.FunnelProviderModel, model FunnelGCSResource) (FunnelGCSJSON, error) {
@@ -316,7 +316,7 @@ func updateExport(ctx context.Context, config *common.FunnelProviderModel, model
 
 	prepareGCSExportData(&data, model)
 
-	return funnel.UpdateWorkspaceEntity(ctx, "exports", config, model.Workspace.ValueString(), model.Id.ValueString(), data)
+	return funnel.UpdateWorkspaceEntity[FunnelGCSJSON, FunnelGCSJSON](ctx, "exports", config, model.Workspace.ValueString(), model.Id.ValueString(), data)
 }
 
 func deleteGCSExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) error {

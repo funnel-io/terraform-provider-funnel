@@ -65,26 +65,8 @@ func GetSubscriptionEntity[T any](ctx context.Context, entity string, subscripti
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
-	if resp.StatusCode == http.StatusNotFound {
-		return respObj, APIError{StatusCode: resp.StatusCode, Message: "Not Found"}
-	}
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return respObj, APIError{StatusCode: resp.StatusCode, Message: "Unauthorized"}
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return respObj, APIError{StatusCode: resp.StatusCode, Message: "Too Many Requests"}
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
-		var errorObj map[string]any
-		if err := json.Unmarshal(body, &errorObj); err == nil {
-			if errMsg, ok := errorObj["error"].(string); ok {
-				return respObj, APIError{StatusCode: resp.StatusCode, Message: errMsg}
-			}
-		}
-		return respObj, APIError{StatusCode: resp.StatusCode, Message: "Bad Request"}
+	if err := HandleHTTPError(resp, body); err != nil {
+		return respObj, err
 	}
 
 	if err := json.Unmarshal(body, &respObj); err == nil {
@@ -116,30 +98,12 @@ func CreateSubscriptionEntity[T any](ctx context.Context, entity string, subscri
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusUnauthorized {
-		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Unauthorized"}
-	}
-
-	if resp.StatusCode == http.StatusForbidden {
-		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Forbidden - limit reached"}
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Too Many Requests"}
-	}
-
 	bodyBytes, _ := io.ReadAll(resp.Body)
-	if !isSuccessStatus(resp.StatusCode) {
-		var errorObj map[string]any
-		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
-			if resp.StatusCode == http.StatusBadRequest {
-				if errMsg, ok := errorObj["error"].(string); ok {
-					return respObj, &APIError{StatusCode: resp.StatusCode, Message: errMsg, Details: errorObj}
-				}
-			}
-			return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Create failed", Details: errorObj}
+	if err := HandleHTTPError(resp, bodyBytes); err != nil {
+		if apiErr, ok := err.(APIError); ok {
+			return respObj, &apiErr
 		}
-		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Create failed", Details: string(bodyBytes)}
+		return respObj, &APIError{Message: err.Error()}
 	}
 
 	if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
@@ -172,30 +136,8 @@ func UpdateSubscriptionEntity[T any](ctx context.Context, entity string, subscri
 	defer resp.Body.Close()
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode == http.StatusUnauthorized {
-		return respObj, fmt.Errorf("Unauthorized")
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return respObj, fmt.Errorf("not found")
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return respObj, fmt.Errorf("too many requests")
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
-		var errorObj map[string]any
-		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
-			if errMsg, ok := errorObj["error"].(string); ok {
-				return respObj, fmt.Errorf("%s", errMsg)
-			}
-		}
-		return respObj, fmt.Errorf("bad request")
-	}
-
-	if !isSuccessStatus(resp.StatusCode) {
-		return respObj, fmt.Errorf("update failed with status: %d", resp.StatusCode)
+	if err := HandleHTTPError(resp, bodyBytes); err != nil {
+		return respObj, err
 	}
 
 	if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
@@ -224,26 +166,8 @@ func GetWorkspaceEntity[T any](ctx context.Context, entity string, config *commo
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
-	if resp.StatusCode == http.StatusNotFound {
-		return respObj, APIError{StatusCode: resp.StatusCode, Message: "Not Found"}
-	}
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return respObj, APIError{StatusCode: resp.StatusCode, Message: "Unauthorized"}
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return respObj, APIError{StatusCode: resp.StatusCode, Message: "Too Many Requests"}
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
-		var errorObj map[string]any
-		if err := json.Unmarshal(body, &errorObj); err == nil {
-			if errMsg, ok := errorObj["error"].(string); ok {
-				return respObj, APIError{StatusCode: resp.StatusCode, Message: errMsg}
-			}
-		}
-		return respObj, APIError{StatusCode: resp.StatusCode, Message: "Bad Request"}
+	if err := HandleHTTPError(resp, body); err != nil {
+		return respObj, err
 	}
 
 	if err := json.Unmarshal(body, &respObj); err == nil {
@@ -280,49 +204,12 @@ func CreateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 	}
 
 	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Unauthorized"}
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Too Many Requests"}
-	}
-
 	bodyBytes, _ := io.ReadAll(resp.Body)
-
-	// Log the response for debugging
-	tflog.Debug(ctx, fmt.Sprintf("Create response status: %d", resp.StatusCode))
-	tflog.Debug(ctx, fmt.Sprintf("Create response body: %s", string(bodyBytes)))
-
-	// Check if response contains an error structure even with success status code
-	var errorCheck map[string]any
-	if err := json.Unmarshal(bodyBytes, &errorCheck); err == nil {
-		if errorMsg, hasError := errorCheck["error"].(string); hasError {
-			statusCode := resp.StatusCode
-			if sc, ok := errorCheck["statusCode"].(float64); ok {
-				statusCode = int(sc)
-			}
-			message := errorMsg
-			if msg, ok := errorCheck["message"].(string); ok {
-				message = msg
-			}
-			return respObj, &APIError{StatusCode: statusCode, Message: message, Details: errorCheck}
+	if err := HandleHTTPError(resp, bodyBytes); err != nil {
+		if apiErr, ok := err.(APIError); ok {
+			return respObj, &apiErr
 		}
-	}
-
-	if !isSuccessStatus(resp.StatusCode) {
-		var errorObj map[string]any
-		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
-			if resp.StatusCode == http.StatusBadRequest {
-				if errMsg, ok := errorObj["error"].(string); ok {
-					return respObj, &APIError{StatusCode: resp.StatusCode, Message: errMsg, Details: errorObj}
-				}
-			}
-			return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Create failed", Details: errorObj}
-		} else {
-			return respObj, &APIError{StatusCode: resp.StatusCode, Message: "Create failed", Details: string(bodyBytes)}
-		}
+		return respObj, &APIError{Message: err.Error()}
 	}
 
 	unmarshalErr := json.Unmarshal(bodyBytes, &respObj)
@@ -359,30 +246,8 @@ func UpdateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 	defer resp.Body.Close()
 	bodyBytes, _ := io.ReadAll(resp.Body)
 
-	if resp.StatusCode == http.StatusUnauthorized {
-		return respObj, fmt.Errorf("Unauthorized")
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return respObj, fmt.Errorf("not found")
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return respObj, fmt.Errorf("too many requests")
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
-		var errorObj map[string]any
-		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
-			if errMsg, ok := errorObj["error"].(string); ok {
-				return respObj, fmt.Errorf("%s", errMsg)
-			}
-		}
-		return respObj, fmt.Errorf("bad request")
-	}
-
-	if !isSuccessStatus(resp.StatusCode) {
-		return respObj, fmt.Errorf("update failed with status: %d", resp.StatusCode)
+	if err := HandleHTTPError(resp, bodyBytes); err != nil {
+		return respObj, err
 	}
 
 	if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
@@ -449,10 +314,6 @@ func PatchWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity strin
 	return respObj, fmt.Errorf("invalid response from update %s", entity)
 }
 
-func isSuccessStatus(code int) bool {
-	return code >= 200 && code < 300
-}
-
 func DeleteSubscriptionEntity(ctx context.Context, entity string, subscriptionId string, id string, config *common.FunnelProviderModel) error {
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), subscriptionId, entity, id)
 	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
@@ -470,29 +331,7 @@ func DeleteSubscriptionEntity(ctx context.Context, entity string, subscriptionId
 	defer resp.Body.Close()
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("Unauthorized")
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return fmt.Errorf("too many requests")
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
-		var respObj map[string]any
-		if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
-			if errMsg, ok := respObj["error"].(string); ok {
-				return fmt.Errorf("%s", errMsg)
-			}
-		}
-		return fmt.Errorf("bad request")
-	}
-
-	return nil
+	return HandleDeleteError(resp, bodyBytes)
 }
 
 func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string) error {
@@ -518,53 +357,5 @@ func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.Fu
 	defer resp.Body.Close()
 	bodyBytes, _ := io.ReadAll(resp.Body)
 
-	// Log the response for debugging
-	tflog.Debug(ctx, fmt.Sprintf("Delete response status: %d", resp.StatusCode))
-	tflog.Debug(ctx, fmt.Sprintf("Delete response body: %s", string(bodyBytes)))
-
-	// Check if response contains an error structure even with success status code
-	var errorCheck map[string]any
-	if err := json.Unmarshal(bodyBytes, &errorCheck); err == nil {
-		if errorMsg, hasError := errorCheck["error"].(string); hasError {
-			statusCode := resp.StatusCode
-			if sc, ok := errorCheck["statusCode"].(float64); ok {
-				statusCode = int(sc)
-			}
-			message := errorMsg
-			if msg, ok := errorCheck["message"].(string); ok {
-				message = msg
-			}
-			return fmt.Errorf("delete failed: %s (status: %d)", message, statusCode)
-		}
-	}
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("Unauthorized")
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return fmt.Errorf("too many requests")
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		// 404 is OK - idempotent delete
-		return nil
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
-		var respObj map[string]any
-		if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
-			if errMsg, ok := respObj["error"].(string); ok {
-				return fmt.Errorf("%s", errMsg)
-			}
-		}
-		return fmt.Errorf("bad request")
-	}
-
-	// Check for success status
-	if !isSuccessStatus(resp.StatusCode) {
-		return fmt.Errorf("delete failed with status: %d, body: %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	return nil
+	return HandleDeleteError(resp, bodyBytes)
 }

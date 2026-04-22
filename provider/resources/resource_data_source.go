@@ -37,7 +37,7 @@ type DataSourceResource struct {
 type DataSourceResourceModel struct {
 	Id               types.String `tfsdk:"id"`
 	Workspace        types.String `tfsdk:"workspace"`
-	SourceType       types.String `tfsdk:"source_type"`
+	Type             types.String `tfsdk:"type"`
 	Name             types.String `tfsdk:"name"`
 	IsDemo           types.Bool   `tfsdk:"is_demo"`
 	DownloadDisabled types.Bool   `tfsdk:"download_disabled"`
@@ -107,7 +107,7 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"source_type": schema.StringAttribute{
+			"type": schema.StringAttribute{
 				MarkdownDescription: "Source type (e.g. adwords, bigquery_ga4, test_connect_playground)",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
@@ -201,7 +201,7 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 
 	payload := CreateDataSourceRequest{
 		FunnelAccountId: data.Workspace.ValueString(),
-		Type:            data.SourceType.ValueString(),
+		Type:            data.Type.ValueString(),
 		Name:            data.Name.ValueString(),
 	}
 
@@ -246,7 +246,7 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 
 	data.Id = types.StringValue(respObj.Key)
 	data.Workspace = types.StringValue(respObj.FunnelAccountId)
-	data.SourceType = types.StringValue(respObj.Type)
+	data.Type = types.StringValue(respObj.Type)
 	data.Name = types.StringValue(respObj.Name)
 	data.State = types.StringValue(respObj.State)
 	data.IsDemo = types.BoolValue(respObj.IsDemo)
@@ -294,7 +294,7 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	data.Workspace = types.StringValue(ds.FunnelAccountId)
-	data.SourceType = types.StringValue(ds.Type)
+	data.Type = types.StringValue(ds.Type)
 	data.Name = types.StringValue(ds.Name)
 	data.State = types.StringValue(ds.State)
 	data.IsDemo = types.BoolValue(ds.IsDemo)
@@ -370,7 +370,7 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	data.Workspace = types.StringValue(respObj.FunnelAccountId)
-	data.SourceType = types.StringValue(respObj.Type)
+	data.Type = types.StringValue(respObj.Type)
 	data.Name = types.StringValue(respObj.Name)
 	data.State = types.StringValue(respObj.State)
 	data.IsDemo = types.BoolValue(respObj.IsDemo)
@@ -456,7 +456,7 @@ func (r *DataSourceResource) ImportState(ctx context.Context, req resource.Impor
 	data := DataSourceResourceModel{
 		Id:               types.StringValue(dataSourceID),
 		Workspace:        types.StringValue(ds.FunnelAccountId),
-		SourceType:       types.StringValue(ds.Type),
+		Type:             types.StringValue(ds.Type),
 		Name:             types.StringValue(ds.Name),
 		IsDemo:           types.BoolValue(ds.IsDemo),
 		DownloadDisabled: types.BoolValue(ds.DownloadDisabled),

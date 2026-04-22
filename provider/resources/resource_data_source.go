@@ -2,20 +2,17 @@ package resources
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
-	"terraform-provider-funnel/provider/planmodifiers"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -39,47 +36,43 @@ type DataSourceResourceModel struct {
 	Workspace        types.String `tfsdk:"workspace"`
 	Type             types.String `tfsdk:"type"`
 	Name             types.String `tfsdk:"name"`
-	IsDemo           types.Bool   `tfsdk:"is_demo"`
 	DownloadDisabled types.Bool   `tfsdk:"download_disabled"`
-	Definition       types.String `tfsdk:"definition"`
 	RemoteId         types.String `tfsdk:"remote_id"`
 	ExcludeFromMeld  types.Bool   `tfsdk:"exclude_data_from_funnel"`
 	State            types.String `tfsdk:"state"`
 	CredentialId     types.String `tfsdk:"credential_id"`
+	ReportType       types.String `tfsdk:"report_type"`
 }
 
 type DataSourceJSON struct {
-	Key              string                 `json:"key"`
-	Type             string                 `json:"type"`
-	Id               string                 `json:"id"`
-	FunnelAccountId  string                 `json:"funnelAccountId"`
-	Name             string                 `json:"name"`
-	ConnectionId     string                 `json:"connectionId,omitempty"`
-	State            string                 `json:"state"`
-	ExcludeFromMeld  bool                   `json:"excludeFromMeld"`
-	IsDemo           bool                   `json:"isDemo"`
-	DownloadDisabled bool                   `json:"downloadDisabled,omitempty"`
-	RemoteId         string                 `json:"remoteId,omitempty"`
-	DefinitionHash   string                 `json:"definitionHash,omitempty"`
-	Batchfill        bool                   `json:"batchfill"`
+	Key              string `json:"key"`
+	Type             string `json:"type"`
+	Id               string `json:"id"`
+	FunnelAccountId  string `json:"funnelAccountId"`
+	Name             string `json:"name"`
+	ConnectionId     string `json:"connectionId,omitempty"`
+	State            string `json:"state"`
+	ExcludeFromMeld  bool   `json:"excludeFromMeld"`
+	DownloadDisabled bool   `json:"downloadDisabled,omitempty"`
+	RemoteId         string `json:"remoteId,omitempty"`
 }
 
 type CreateDataSourceRequest struct {
-	FunnelAccountId  string                 `json:"funnelAccountId"`
-	Type             string                 `json:"type"`
-	Name             string                 `json:"name"`
-	IsDemo           bool                   `json:"isDemo,omitempty"`
-	DownloadDisabled bool                   `json:"downloadDisabled,omitempty"`
-	Definition       map[string]interface{} `json:"definition,omitempty"`
-	RemoteId         string                 `json:"remoteId,omitempty"`
+	FunnelAccountId  string `json:"funnelAccountId"`
+	Type             string `json:"type"`
+	Name             string `json:"name"`
+	ConnectionId     string `json:"connectionId,omitempty"`
+	RemoteId         string `json:"remoteId,omitempty"`
+	ReportType       string `json:"reportType,omitempty"`
+	ExcludeFromMeld  bool   `json:"excludeFromMeld,omitempty"`
+	DownloadDisabled bool   `json:"downloadDisabled,omitempty"`
 }
 
 type UpdateDataSourceRequest struct {
-	Name             *string                 `json:"name,omitempty"`
-	FunnelAccountId  *string                 `json:"funnelAccountId,omitempty"`
-	ExcludeFromMeld  *bool                   `json:"excludeFromMeld,omitempty"`
-	Definition       *map[string]interface{} `json:"definition,omitempty"`
-	DownloadDisabled *bool                   `json:"downloadDisabled,omitempty"`
+	Name             *string `json:"name,omitempty"`
+	FunnelAccountId  *string `json:"funnelAccountId,omitempty"`
+	ExcludeFromMeld  *bool   `json:"excludeFromMeld,omitempty"`
+	DownloadDisabled *bool   `json:"downloadDisabled,omitempty"`
 }
 
 func (r *DataSourceResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -127,26 +120,10 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 					stringvalidator.LengthBetween(1, 255),
 				},
 			},
-			"is_demo": schema.BoolAttribute{
-				MarkdownDescription: "Whether this is a demo data source",
-				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.RequiresReplace(),
-				},
-			},
 			"download_disabled": schema.BoolAttribute{
 				MarkdownDescription: "Whether download is disabled for this data source",
 				Optional:            true,
 				Computed:            true,
-			},
-			"definition": schema.StringAttribute{
-				MarkdownDescription: "Data source configuration definition (JSON string)",
-				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					planmodifiers.JSONSemanticEqual(),
-				},
 			},
 			"remote_id": schema.StringAttribute{
 				MarkdownDescription: "Remote ID from the source system",
@@ -165,13 +142,17 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Computed:            true,
 			},
 			"state": schema.StringAttribute{
-				MarkdownDescription: "Current state of the data source",
+				MarkdownDescription: "Current state of the data source (read-only)",
 				Computed:            true,
 			},
 			"credential_id": schema.StringAttribute{
 				MarkdownDescription: "Credential ID (connection ID) - temporarily disabled",
 				Optional:            true,
 				Computed:            true,
+			},
+			"report_type": schema.StringAttribute{
+				MarkdownDescription: "Report type for the data source",
+				Optional:            true,
 			},
 		},
 	}
@@ -206,8 +187,8 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	// Add optional fields if provided
-	if !data.IsDemo.IsNull() && !data.IsDemo.IsUnknown() {
-		payload.IsDemo = data.IsDemo.ValueBool()
+	if !data.ExcludeFromMeld.IsNull() && !data.ExcludeFromMeld.IsUnknown() {
+		payload.ExcludeFromMeld = data.ExcludeFromMeld.ValueBool()
 	}
 	if !data.DownloadDisabled.IsNull() && !data.DownloadDisabled.IsUnknown() {
 		payload.DownloadDisabled = data.DownloadDisabled.ValueBool()
@@ -215,17 +196,8 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 	if !data.RemoteId.IsNull() && !data.RemoteId.IsUnknown() {
 		payload.RemoteId = data.RemoteId.ValueString()
 	}
-	if !data.Definition.IsNull() && !data.Definition.IsUnknown() {
-		// Parse JSON string to map[string]interface{}
-		var definitionMap map[string]interface{}
-		if err := json.Unmarshal([]byte(data.Definition.ValueString()), &definitionMap); err != nil {
-			resp.Diagnostics.AddError(
-				"Invalid Definition JSON",
-				"Could not parse definition as JSON: "+err.Error(),
-			)
-			return
-		}
-		payload.Definition = definitionMap
+	if !data.ReportType.IsNull() && !data.ReportType.IsUnknown() {
+		payload.ReportType = data.ReportType.ValueString()
 	}
 
 	respObj, err := funnel.CreateWorkspaceEntity[CreateDataSourceRequest, DataSourceJSON](ctx, "datasources", r.config, data.Workspace.ValueString(), payload)
@@ -248,10 +220,9 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 	data.Workspace = types.StringValue(respObj.FunnelAccountId)
 	data.Type = types.StringValue(respObj.Type)
 	data.Name = types.StringValue(respObj.Name)
-	data.State = types.StringValue(respObj.State)
-	data.IsDemo = types.BoolValue(respObj.IsDemo)
 	data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
 	data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
+	data.State = types.StringValue(respObj.State)
 
 	if respObj.ConnectionId != "" {
 		data.CredentialId = types.StringValue(respObj.ConnectionId)
@@ -263,10 +234,6 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 		data.RemoteId = types.StringValue(respObj.RemoteId)
 	} else {
 		data.RemoteId = types.StringNull()
-	}
-
-	if data.Definition.IsNull() || data.Definition.IsUnknown() {
-		data.Definition = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -296,10 +263,9 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
 	data.Workspace = types.StringValue(ds.FunnelAccountId)
 	data.Type = types.StringValue(ds.Type)
 	data.Name = types.StringValue(ds.Name)
-	data.State = types.StringValue(ds.State)
-	data.IsDemo = types.BoolValue(ds.IsDemo)
 	data.DownloadDisabled = types.BoolValue(ds.DownloadDisabled)
 	data.ExcludeFromMeld = types.BoolValue(ds.ExcludeFromMeld)
+	data.State = types.StringValue(ds.State)
 
 	if ds.ConnectionId != "" {
 		data.CredentialId = types.StringValue(ds.ConnectionId)
@@ -311,12 +277,6 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
 		data.RemoteId = types.StringValue(ds.RemoteId)
 	} else {
 		data.RemoteId = types.StringNull()
-	}
-
-	// Keep definition from state as it's not returned in the response
-	// If it's unknown or null in state, set to null
-	if data.Definition.IsNull() || data.Definition.IsUnknown() {
-		data.Definition = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -347,19 +307,6 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 		payload.DownloadDisabled = &downloadDisabled
 	}
 
-	if !data.Definition.IsNull() && !data.Definition.IsUnknown() {
-		// Parse JSON string to map[string]interface{}
-		var definitionMap map[string]interface{}
-		if err := json.Unmarshal([]byte(data.Definition.ValueString()), &definitionMap); err != nil {
-			resp.Diagnostics.AddError(
-				"Invalid Definition JSON",
-				"Could not parse definition as JSON: "+err.Error(),
-			)
-			return
-		}
-		payload.Definition = &definitionMap
-	}
-
 	respObj, err := funnel.PatchWorkspaceEntity[UpdateDataSourceRequest, DataSourceJSON](ctx, "datasources", r.config, data.Workspace.ValueString(), data.Id.ValueString(), payload)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -372,10 +319,9 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 	data.Workspace = types.StringValue(respObj.FunnelAccountId)
 	data.Type = types.StringValue(respObj.Type)
 	data.Name = types.StringValue(respObj.Name)
-	data.State = types.StringValue(respObj.State)
-	data.IsDemo = types.BoolValue(respObj.IsDemo)
 	data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
 	data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
+	data.State = types.StringValue(respObj.State)
 
 	if respObj.ConnectionId != "" {
 		data.CredentialId = types.StringValue(respObj.ConnectionId)
@@ -387,10 +333,6 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 		data.RemoteId = types.StringValue(respObj.RemoteId)
 	} else {
 		data.RemoteId = types.StringNull()
-	}
-
-	if data.Definition.IsNull() || data.Definition.IsUnknown() {
-		data.Definition = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -458,13 +400,11 @@ func (r *DataSourceResource) ImportState(ctx context.Context, req resource.Impor
 		Workspace:        types.StringValue(ds.FunnelAccountId),
 		Type:             types.StringValue(ds.Type),
 		Name:             types.StringValue(ds.Name),
-		IsDemo:           types.BoolValue(ds.IsDemo),
 		DownloadDisabled: types.BoolValue(ds.DownloadDisabled),
 		ExcludeFromMeld:  types.BoolValue(ds.ExcludeFromMeld),
 		State:            types.StringValue(ds.State),
 		CredentialId:     credentialId,
 		RemoteId:         remoteId,
-		Definition:       types.StringNull(),
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

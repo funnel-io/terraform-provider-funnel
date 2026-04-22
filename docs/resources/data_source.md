@@ -18,7 +18,7 @@ Funnel data source
 ### Required
 
 - `name` (String) Display name for the data source
-- `source_type` (String) Source type (e.g. adwords, bigquery_ga4, test_connect_playground)
+- `type` (String) Source type (e.g. adwords, bigquery_ga4, test_connect_playground)
 - `workspace` (String) Funnel workspace ID
 
 ### Optional

@@ -1,4 +1,4 @@
-.PHONY: build format test docs
+.PHONY: build format test docs all
 
 build:
 	go vet
@@ -6,6 +6,7 @@ build:
 
 format:
 	go fmt
+	terraform fmt -recursive
 
 test:
 	go test -v ./provider/**/
@@ -13,3 +14,5 @@ test:
 docs:
 	cd tools
 	go generate ./...
+
+all: format build test docs

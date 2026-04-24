@@ -5,7 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.6] - Latest
+## [0.2.0] - 2026-04-24
+
+### Added
+
+- Resource for Funnel data sources (`funnel_data_source`) for a limited set of connectors.
+- Examples for all resources and data sources.
+- Support for Snowflake exports with private key authentication.
+
+### Changed
+
+- Improved error handling for bad requests in Funnel API client.
+- Enhanced Snowflake export documentation.
+
+## [0.1.6] - 2026-03-27
 
 ### Added
 
@@ -16,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated the terraform-plugin-framework to v1.19.0.
 
-## [0.1.5] 
+## [0.1.5]
 
 ### Changed
 

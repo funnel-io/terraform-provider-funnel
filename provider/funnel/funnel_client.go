@@ -186,10 +186,6 @@ func CreateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity)
 
-	// Log the request for debugging
-	tflog.Debug(ctx, fmt.Sprintf("Create request URL: %s", reqURL))
-	tflog.Debug(ctx, fmt.Sprintf("Create request body: %s", string(body)))
-
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, &APIError{Message: "Failed to create request", Details: err}
@@ -214,7 +210,6 @@ func CreateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 
 	unmarshalErr := json.Unmarshal(bodyBytes, &respObj)
 	if unmarshalErr == nil {
-		tflog.Debug(ctx, fmt.Sprintf("Unmarshaled response: %+v", respObj))
 		return respObj, nil
 	}
 
@@ -281,30 +276,8 @@ func PatchWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity strin
 	defer resp.Body.Close()
 	bodyBytes, _ := io.ReadAll(resp.Body)
 
-	if resp.StatusCode == http.StatusUnauthorized {
-		return respObj, fmt.Errorf("Unauthorized")
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return respObj, fmt.Errorf("not found")
-	}
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return respObj, fmt.Errorf("too many requests")
-	}
-
-	if resp.StatusCode == http.StatusBadRequest {
-		var errorObj map[string]any
-		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
-			if errMsg, ok := errorObj["error"].(string); ok {
-				return respObj, fmt.Errorf("%s", errMsg)
-			}
-		}
-		return respObj, fmt.Errorf("bad request")
-	}
-
-	if !isSuccessStatus(resp.StatusCode) {
-		return respObj, fmt.Errorf("update failed with status: %d", resp.StatusCode)
+	if err := HandleHTTPError(resp, bodyBytes); err != nil {
+		return respObj, err
 	}
 
 	if err := json.Unmarshal(bodyBytes, &respObj); err == nil {
@@ -336,10 +309,6 @@ func DeleteSubscriptionEntity(ctx context.Context, entity string, subscriptionId
 
 func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string) error {
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
-
-	// Log the request for debugging
-	tflog.Debug(ctx, fmt.Sprintf("Delete request URL: %s", reqURL))
-	tflog.Debug(ctx, "Delete request method: DELETE")
 
 	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
 	if err != nil {

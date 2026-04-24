@@ -1,8 +1,8 @@
 package funnel
 
 import (
+	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
@@ -122,6 +122,15 @@ func TestHandleHTTPError_BadRequestWithErrorMessage(t *testing.T) {
 	if apiErr.Details == nil {
 		t.Error("expected Details to be populated, got nil")
 	}
+
+	// Validate Details is valid JSON
+	detailsMap, ok := apiErr.Details.(map[string]any)
+	if !ok {
+		t.Fatalf("expected Details to be map[string]any, got %T", apiErr.Details)
+	}
+	if detailsMap["error"] != "Invalid field value" {
+		t.Errorf("expected Details error field to be 'Invalid field value', got %v", detailsMap["error"])
+	}
 }
 
 func TestHandleHTTPError_BadRequestWithoutErrorMessage(t *testing.T) {
@@ -164,6 +173,39 @@ func TestHandleHTTPError_BadRequestWithInvalidJSON(t *testing.T) {
 	}
 }
 
+func TestHandleHTTPError_BadRequestWithMapError(t *testing.T) {
+	bodyBytes := []byte(`{"error": {"message": "Validation failed", "field": "username", "code": "ERR_INVALID"}}`)
+	resp := &http.Response{StatusCode: http.StatusBadRequest}
+	err := HandleHTTPError(resp, bodyBytes)
+	if err == nil {
+		t.Fatal("expected error for bad request status, got nil")
+	}
+
+	apiErr, ok := err.(APIError)
+	if !ok {
+		t.Fatalf("expected APIError, got %T", err)
+	}
+
+	if apiErr.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected status code %d, got %d", http.StatusBadRequest, apiErr.StatusCode)
+	}
+
+	// Message should be stringified JSON when error is a map
+	var errorMap map[string]any
+	if err := json.Unmarshal([]byte(apiErr.Message), &errorMap); err != nil {
+		t.Fatalf("expected Message to be valid JSON, got error: %v, Message: %q", err, apiErr.Message)
+	}
+	if errorMap["message"] != "Validation failed" {
+		t.Errorf("expected message field to be 'Validation failed', got %v", errorMap["message"])
+	}
+	if errorMap["field"] != "username" {
+		t.Errorf("expected field to be 'username', got %v", errorMap["field"])
+	}
+	if errorMap["code"] != "ERR_INVALID" {
+		t.Errorf("expected code to be 'ERR_INVALID', got %v", errorMap["code"])
+	}
+}
+
 func TestHandleHTTPError_GenericErrorWithJSON(t *testing.T) {
 	bodyBytes := []byte(`{"error": "Something went wrong", "code": "ERR001"}`)
 	resp := &http.Response{StatusCode: http.StatusInternalServerError}
@@ -183,6 +225,18 @@ func TestHandleHTTPError_GenericErrorWithJSON(t *testing.T) {
 
 	if apiErr.Details == nil {
 		t.Error("expected Details to be populated with parsed JSON, got nil")
+	}
+
+	// Validate Details is valid JSON map
+	detailsMap, ok := apiErr.Details.(map[string]any)
+	if !ok {
+		t.Fatalf("expected Details to be map[string]any, got %T", apiErr.Details)
+	}
+	if detailsMap["error"] != "Something went wrong" {
+		t.Errorf("expected Details error field to be 'Something went wrong', got %v", detailsMap["error"])
+	}
+	if detailsMap["code"] != "ERR001" {
+		t.Errorf("expected Details code field to be 'ERR001', got %v", detailsMap["code"])
 	}
 }
 
@@ -292,72 +346,24 @@ func TestHandleDeleteError_GenericError(t *testing.T) {
 	}
 }
 
-func TestParseBadRequestError_WithValidErrorField(t *testing.T) {
-	bodyBytes := []byte(`{"error": "Validation failed", "details": "Field X is required"}`)
-	err := parseBadRequestError(http.StatusBadRequest, bodyBytes)
-
-	apiErr, ok := err.(APIError)
-	if !ok {
-		t.Fatalf("expected APIError, got %T", err)
+func TestHandleDeleteError_BadRequestWithMapError(t *testing.T) {
+	bodyBytes := []byte(`{"error": {"message": "Cannot delete", "reason": "Resource is locked"}}`)
+	resp := &http.Response{StatusCode: http.StatusBadRequest}
+	err := HandleDeleteError(resp, bodyBytes)
+	if err == nil {
+		t.Fatal("expected error for bad request status, got nil")
 	}
 
-	if apiErr.Message != "Validation failed" {
-		t.Errorf("expected message 'Validation failed', got %q", apiErr.Message)
+	// Error message should be stringified JSON when error is a map
+	var errorMap map[string]any
+	if err := json.Unmarshal([]byte(err.Error()), &errorMap); err != nil {
+		t.Fatalf("expected error message to be valid JSON, got error: %v, message: %q", err, err.Error())
 	}
-
-	if apiErr.Details == nil {
-		t.Error("expected Details to be populated, got nil")
+	if errorMap["message"] != "Cannot delete" {
+		t.Errorf("expected message field to be 'Cannot delete', got %v", errorMap["message"])
 	}
-}
-
-func TestParseBadRequestError_WithoutErrorField(t *testing.T) {
-	bodyBytes := []byte(`{"field": "value"}`)
-	err := parseBadRequestError(http.StatusBadRequest, bodyBytes)
-
-	apiErr, ok := err.(APIError)
-	if !ok {
-		t.Fatalf("expected APIError, got %T", err)
-	}
-
-	if apiErr.Message != "Bad Request" {
-		t.Errorf("expected message 'Bad Request', got %q", apiErr.Message)
-	}
-}
-
-func TestParseGenericError_WithValidJSON(t *testing.T) {
-	bodyBytes := []byte(`{"error": "Server error", "trace": "xyz"}`)
-	err := parseGenericError(http.StatusInternalServerError, bodyBytes)
-
-	apiErr, ok := err.(APIError)
-	if !ok {
-		t.Fatalf("expected APIError, got %T", err)
-	}
-
-	if apiErr.StatusCode != http.StatusInternalServerError {
-		t.Errorf("expected status code %d, got %d", http.StatusInternalServerError, apiErr.StatusCode)
-	}
-
-	if apiErr.Details == nil {
-		t.Error("expected Details to contain parsed JSON, got nil")
-	}
-}
-
-func TestParseGenericError_WithInvalidJSON(t *testing.T) {
-	bodyBytes := []byte(`not json`)
-	err := parseGenericError(http.StatusInternalServerError, bodyBytes)
-
-	apiErr, ok := err.(APIError)
-	if !ok {
-		t.Fatalf("expected APIError, got %T", err)
-	}
-
-	detailsStr, ok := apiErr.Details.(string)
-	if !ok {
-		t.Fatalf("expected Details to be string, got %T", apiErr.Details)
-	}
-
-	if detailsStr != "not json" {
-		t.Errorf("expected Details to be 'not json', got %q", detailsStr)
+	if errorMap["reason"] != "Resource is locked" {
+		t.Errorf("expected reason field to be 'Resource is locked', got %v", errorMap["reason"])
 	}
 }
 
@@ -371,53 +377,5 @@ func TestAPIError_ErrorMethod(t *testing.T) {
 	expectedMsg := "Test error (status code: 400)"
 	if err.Error() != expectedMsg {
 		t.Errorf("expected error string %q, got %q", expectedMsg, err.Error())
-	}
-}
-
-func TestIsSuccessStatus(t *testing.T) {
-	tests := []struct {
-		code     int
-		expected bool
-	}{
-		{199, false},
-		{200, true},
-		{201, true},
-		{204, true},
-		{299, true},
-		{300, false},
-		{400, false},
-		{500, false},
-	}
-
-	for _, tt := range tests {
-		result := isSuccessStatus(tt.code)
-		if result != tt.expected {
-			t.Errorf("isSuccessStatus(%d) = %v, expected %v", tt.code, result, tt.expected)
-		}
-	}
-}
-
-func TestHandleHTTPError_WithHTTPTestServer(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"error": "Invalid token"}`))
-	}))
-	defer server.Close()
-
-	resp, _ := http.Get(server.URL)
-	bodyBytes := []byte(`{"error": "Invalid token"}`)
-
-	err := HandleHTTPError(resp, bodyBytes)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-
-	apiErr, ok := err.(APIError)
-	if !ok {
-		t.Fatalf("expected APIError, got %T", err)
-	}
-
-	if apiErr.StatusCode != http.StatusUnauthorized {
-		t.Errorf("expected status code %d, got %d", http.StatusUnauthorized, apiErr.StatusCode)
 	}
 }

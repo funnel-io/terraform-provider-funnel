@@ -10,6 +10,28 @@ func isSuccessStatus(code int) bool {
 	return code >= 200 && code < 300
 }
 
+// extractErrorMessage extracts and formats the error message from an error object.
+// It handles both string and map[string]any types for the "error" field.
+func extractErrorMessage(errorObj map[string]any) string {
+	errorValue, exists := errorObj["error"]
+	if !exists {
+		return ""
+	}
+
+	switch v := errorValue.(type) {
+	case string:
+		return v
+	case map[string]any:
+		// Fallback to JSON representation
+		if jsonBytes, err := json.Marshal(v); err == nil {
+			return string(jsonBytes)
+		}
+		return fmt.Sprintf("%v", v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
 // HandleHTTPError processes HTTP response errors and returns an appropriate APIError.
 func HandleHTTPError(resp *http.Response, bodyBytes []byte) error {
 	if isSuccessStatus(resp.StatusCode) {
@@ -36,7 +58,7 @@ func HandleHTTPError(resp *http.Response, bodyBytes []byte) error {
 func parseBadRequestError(statusCode int, bodyBytes []byte) error {
 	var errorObj map[string]any
 	if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
-		if errMsg, ok := errorObj["error"].(string); ok {
+		if errMsg := extractErrorMessage(errorObj); errMsg != "" {
 			return APIError{StatusCode: statusCode, Message: errMsg, Details: errorObj}
 		}
 	}
@@ -72,7 +94,7 @@ func HandleDeleteError(resp *http.Response, bodyBytes []byte) error {
 	case http.StatusBadRequest:
 		var errorObj map[string]any
 		if err := json.Unmarshal(bodyBytes, &errorObj); err == nil {
-			if errMsg, ok := errorObj["error"].(string); ok {
+			if errMsg := extractErrorMessage(errorObj); errMsg != "" {
 				return fmt.Errorf("%s", errMsg)
 			}
 		}

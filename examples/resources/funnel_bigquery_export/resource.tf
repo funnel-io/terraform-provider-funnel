@@ -19,20 +19,17 @@ data "funnel_export_field" "cost" {
   id        = "cost"
 }
 
-# Basic Snowflake export
-resource "funnel_snowflake_export" "basic" {
+# Basic BigQuery export
+resource "funnel_bigquery_export" "basic" {
   workspace = var.workspace_id
-  name      = "Daily Marketing Data to Snowflake"
+  name      = "Daily Marketing Data to BigQuery"
   enabled   = true
-  schedule  = "0 4 * * *" # Daily at 4 AM
+  schedule  = "0 3 * * *" # Daily at 3 AM
 
   destination {
-    account_locator       = "xy12345.us-east-1"
-    database              = "MARKETING_DB"
-    schema_name           = "FUNNEL_DATA"
-    table_name            = "DAILY_PERFORMANCE"
-    username              = "funnel_user"
-    personal_access_token = var.snowflake_pat
+    project_id         = "my-gcp-project"
+    dataset_id         = "funnel_marketing_data"
+    output_id_template = "daily_export_{date}"
   }
 
   fields = [

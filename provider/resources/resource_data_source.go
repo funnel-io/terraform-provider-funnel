@@ -71,6 +71,7 @@ type CreateDataSourceRequest struct {
 type UpdateDataSourceRequest struct {
 	Name             *string `json:"name,omitempty"`
 	FunnelAccountId  *string `json:"funnelAccountId,omitempty"`
+	ConnectionId     *string `json:"connectionId,omitempty"`
 	ExcludeFromMeld  *bool   `json:"excludeFromMeld,omitempty"`
 	DownloadDisabled *bool   `json:"downloadDisabled,omitempty"`
 }
@@ -146,7 +147,7 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Computed:            true,
 			},
 			"credential_id": schema.StringAttribute{
-				MarkdownDescription: "Credential ID (connection ID) - temporarily disabled",
+				MarkdownDescription: "Credential ID (connection ID)",
 				Optional:            true,
 				Computed:            true,
 			},
@@ -187,6 +188,9 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	// Add optional fields if provided
+	if !data.CredentialId.IsNull() && !data.CredentialId.IsUnknown() {
+		payload.ConnectionId = data.CredentialId.ValueString()
+	}
 	if !data.ExcludeFromMeld.IsNull() && !data.ExcludeFromMeld.IsUnknown() {
 		payload.ExcludeFromMeld = data.ExcludeFromMeld.ValueBool()
 	}
@@ -295,6 +299,11 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 	if !data.Name.IsNull() && !data.Name.IsUnknown() {
 		name := data.Name.ValueString()
 		payload.Name = &name
+	}
+
+	if !data.CredentialId.IsNull() && !data.CredentialId.IsUnknown() {
+		credentialId := data.CredentialId.ValueString()
+		payload.ConnectionId = &credentialId
 	}
 
 	if !data.ExcludeFromMeld.IsNull() && !data.ExcludeFromMeld.IsUnknown() {

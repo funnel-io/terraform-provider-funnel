@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const Version = "0.1.6"
+const Version = "0.2.0"
 
 type APIError struct {
 	StatusCode int

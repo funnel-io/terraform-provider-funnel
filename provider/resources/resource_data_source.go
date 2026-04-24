@@ -71,6 +71,7 @@ type CreateDataSourceRequest struct {
 type UpdateDataSourceRequest struct {
 	Name             *string `json:"name,omitempty"`
 	FunnelAccountId  *string `json:"funnelAccountId,omitempty"`
+	ConnectionId     *string `json:"connectionId,omitempty"`
 	ExcludeFromMeld  *bool   `json:"excludeFromMeld,omitempty"`
 	DownloadDisabled *bool   `json:"downloadDisabled,omitempty"`
 }

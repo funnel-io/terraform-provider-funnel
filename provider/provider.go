@@ -102,14 +102,19 @@ func (p *funnelProvider) Configure(ctx context.Context, req provider.ConfigureRe
 func (p *funnelProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		datasources.NewExportFieldDataSource,
-		datasources.NewWorkspacesDataSource,
+		datasources.NewWorkspaceDataSource,
 	}
 }
 
 func (p *funnelProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		resources.NewWorkspaceResource,
 		resources.NewGCSResource,
 		resources.NewBigqueryResource,
+		resources.NewMeasurementResource,
 		resources.NewSnowflakeResource,
+		resources.NewDataSourceResource,
+		resources.NewCustomDimensionResource,
+		resources.NewCustomMetricResource,
 	}
 }

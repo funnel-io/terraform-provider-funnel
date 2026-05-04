@@ -44,7 +44,7 @@ type PartitionSchema struct {
 
 type PartitionSchemaJSON struct {
 	By  string `json:"by"`
-	Per string `json:"per"`
+	Per string `json:"per,omitempty"`
 }
 
 type RollingDate struct {

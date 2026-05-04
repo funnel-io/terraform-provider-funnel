@@ -30,8 +30,8 @@ resource "funnel_workspace" "example" {
 
 ## Authentication
 
-Get the integration credentials `client_id` and `client_secret` from Funnel for your subscription.
-In Funnel go to "Subscription overview" in the right top corner, select "Authentication" and create a new integration credential at the bottom of the page.
+Get the System user `client_id` and `client_secret` from Funnel for your subscription.
+In Funnel go to "Subscription overview" in the right top corner, select "Authentication" and create a new System user at the bottom of the page.
 
 ## Subscriptions, workspaces and resource IDs
 

@@ -72,22 +72,18 @@ func (r *MeasurementResource) Schema(ctx context.Context, req resource.SchemaReq
 			Attributes: map[string]schema.Attribute{
 				"table_name": schema.StringAttribute{
 					MarkdownDescription: "Measurement table name",
-					Description:         "Measurement table name",
 					Required:            true,
 				},
 				"snapshot_table_id": schema.StringAttribute{
 					MarkdownDescription: "Snapshot table ID",
-					Description:         "Snapshot table ID",
 					Optional:            true,
 				},
 				"snapshot_source_id": schema.StringAttribute{
 					MarkdownDescription: "Snapshot source ID",
-					Description:         "Snapshot source ID",
 					Optional:            true,
 				},
 				"snapshot_source_type": schema.StringAttribute{
 					MarkdownDescription: "Snapshot source type",
-					Description:         "Snapshot source type",
 					Optional:            true,
 				},
 			},

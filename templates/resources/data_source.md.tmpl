@@ -1,0 +1,54 @@
+---
+page_title: "{{.Type}} {{.Name}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+~> **Note:** Before creating a data source, ensure that you have shared the necessary credential with the System user in Funnel.
+
+## Supported Source Types
+
+The following source types are supported with their available report types:
+
+### Google Ads (`adwords`)
+Report types: `campaign` (default), `ad_group`, `ad`, `campaign_pmax`, `keyword`, `search_query`, `video`, `geo`, `shopping`, `age_range`, `gender`
+
+### Facebook Ads (`facebookads`)
+Report types: `campaign` (default), `ad`, `ad_set`, `ad_with_video`, `campaign_by_age_gender`, `ad_by_platform`, `campaign_by_country`, `reach_and_frequency`
+
+### TikTok Ads (`tiktok`)
+Report types: `ad` (default), `ad_group`, `campaign`, `reach`, `audience`, `extended_metadata`, `reservation_campaign`
+
+### Bing Ads (`bing`)
+Report types: `campaign` (default), `ad_group`, `ad`, `keyword`, `geo`, `search_query`, `age_and_gender`, `campaign_hourly`, `reach_campaign`
+
+### Spotify Ads (`spotifyads`)
+No report type required (quick-connect connector)
+
+### LinkedIn Ads (`linkedin_api`)
+No report type required (uses default configuration)
+
+### Instagram Insights (`instagraminsights`)
+Report types: `media` (default), `account`, `audience`
+
+### Reddit Ads (`reddit`)
+Report types: `ad` (default), `conversion`
+
+## Example Usage
+
+{{ tffile "examples/resources/funnel_data_source/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import funnel_data_source.example <workspace_id>/<data_source_id>
+```

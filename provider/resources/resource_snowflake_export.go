@@ -64,38 +64,38 @@ func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaReque
 	type_description := "Snowflake export. For authentication we recommend using Snowflake Personal Access Token (PAT) instead of a private key."
 
 	resp.Schema = common.GetExportSchema(schema.SingleNestedAttribute{
-		Description: "Snowflake destination table",
-		Required:    true,
+		MarkdownDescription: "Snowflake destination table",
+		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"account_locator": schema.StringAttribute{
-				Description: "Account Locator or Organisation Name and Account Name separated by a period",
-				Required:    true,
+				MarkdownDescription: "Account Locator or Organisation Name and Account Name separated by a period",
+				Required:            true,
 			},
 			"table_name": schema.StringAttribute{
-				Description: "Table name to export data to",
-				Required:    true,
+				MarkdownDescription: "Table name to export data to",
+				Required:            true,
 			},
 			"database": schema.StringAttribute{
-				Description: "Database name to export data to",
-				Required:    true,
+				MarkdownDescription: "Database name to export data to",
+				Required:            true,
 			},
 			"schema_name": schema.StringAttribute{
-				Description: "Schema name to export data to",
-				Required:    true,
+				MarkdownDescription: "Schema name to export data to",
+				Required:            true,
 			},
 			"username": schema.StringAttribute{
-				Description: "User name to export data to",
-				Required:    true,
+				MarkdownDescription: "User name to export data to",
+				Required:            true,
 			},
 			"personal_access_token": schema.StringAttribute{
-				Description: "Snowflake Personal Access Token (PAT)",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "Snowflake Personal Access Token (PAT)",
+				Optional:            true,
+				Sensitive:           true,
 			},
 			"private_key": schema.StringAttribute{
-				Description: "Snowflake private key. We recommend using Snowflake Personal Access Token (PAT) instead of a private key.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "Snowflake private key. We recommend using Snowflake Personal Access Token (PAT) instead of a private key.",
+				Optional:            true,
+				Sensitive:           true,
 			},
 		},
 	}, type_description)

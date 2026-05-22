@@ -59,17 +59,14 @@ func (r *BigqueryResource) Schema(ctx context.Context, req resource.SchemaReques
 		Attributes: map[string]schema.Attribute{
 			"output_id_template": schema.StringAttribute{
 				MarkdownDescription: "Output ID template for the export",
-				Description:         "Output ID template for the export",
 				Required:            true,
 			},
 			"dataset_id": schema.StringAttribute{
 				MarkdownDescription: "BigQuery dataset ID",
-				Description:         "BigQuery dataset ID",
 				Required:            true,
 			},
 			"project_id": schema.StringAttribute{
 				MarkdownDescription: "BigQuery project ID",
-				Description:         "BigQuery project ID",
 				Required:            true,
 			},
 		},

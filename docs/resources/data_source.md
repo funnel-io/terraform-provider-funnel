@@ -11,77 +11,68 @@ Manages a Funnel data source, which represents a connection to an advertising pl
 
 ~> **Note:** Before creating a data source, ensure that you have shared the necessary credential with the System user in Funnel.
 
-## Supported Source Types
+## Template System
 
-The following source types are supported with their available report types:
+Data sources are configured using templates that define what data to collect. Templates come in two forms:
 
-### Google Ads (`adwords`)
-Report types: `campaign` (default), `ad_group`, `ad`, `campaign_pmax`, `keyword`, `search_query`, `video`, `geo`, `shopping`, `age_range`, `gender`
+- **Built-in templates** (`funnel:<hash>`) — Defined by each connector plugin. The hash is derived from the template's definition content.
+- **Custom templates** (`<prefix>-<hash>`) — Created by subscription owners via the Funnel UI. These allow full customization of data collection.
 
-### Facebook Ads (`facebookads`)
-Report types: `campaign` (default), `ad`, `ad_set`, `ad_with_video`, `campaign_by_age_gender`, `ad_by_platform`, `campaign_by_country`, `reach_and_frequency`
+Use `template_id` to specify which template to use. Not all connectors require a template.
 
-### TikTok Ads (`tiktok`)
-Report types: `ad` (default), `ad_group`, `campaign`, `reach`, `audience`, `extended_metadata`, `reservation_campaign`
+## Remote Identity Contracts
 
-### Bing Ads (`bing`)
-Report types: `campaign` (default), `ad_group`, `ad`, `keyword`, `geo`, `search_query`, `age_and_gender`, `campaign_hourly`, `reach_campaign`
+Different connectors require different types of remote identity:
 
-### Spotify Ads (`spotifyads`)
-No report type required (quick-connect connector)
+- **remoteId** — A single string identifier (e.g., TikTok advertiser ID). Use the `remote_id` field.
+- **remoteStruct** — Multiple identifiers as a JSON object (e.g., Google Ads customer_id + login_customer_id). Use the `remote_struct` field.
+- **authOnly** — No remote identity needed (e.g., Spotify Ads). Omit both fields.
 
-### LinkedIn Ads (`linkedin_api`)
-No report type required (uses default configuration)
-
-### Instagram Insights (`instagraminsights`)
-Report types: `media` (default), `account`, `audience`
-
-### Reddit Ads (`reddit`)
-Report types: `ad` (default), `conversion`
+`remote_id` and `remote_struct` are mutually exclusive — you cannot specify both.
 
 ## Example Usage
 
 ```terraform
-# Google Ads data source with campaign report type
+# Google Ads data source with remoteStruct contract
 resource "funnel_data_source" "adwords_campaign" {
   workspace     = var.workspace_id
   type          = "adwords"
   name          = "Google Ads - Main Account"
-  report_type   = "campaign"
-  remote_id     = "12345678"
+  template_id   = "funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
   credential_id = var.google_ads_credential_id
-
-  # Default values
-  download_disabled        = false
-  exclude_data_from_funnel = false
+  remote_struct = jsonencode({
+    customer_id       = "123-456-7890"
+    login_customer_id = "098-765-4321"
+  })
 }
 
-# Facebook Ads data source with ad level report
-resource "funnel_data_source" "facebook_ads" {
-  workspace     = var.workspace_id
-  type          = "facebookads"
-  name          = "Facebook Ads - Main Account"
-  report_type   = "ad"
-  remote_id     = "act_123456789"
-  credential_id = var.facebook_credential_id
-}
-
-# TikTok Ads data source with audience report
-resource "funnel_data_source" "tiktok_audience" {
+# TikTok Ads data source with remoteId contract
+resource "funnel_data_source" "tiktok_ads" {
   workspace     = var.workspace_id
   type          = "tiktok"
-  name          = "TikTok Ads - Audience Report"
-  report_type   = "audience"
-  remote_id     = "987654321"
+  name          = "TikTok Ads - Campaign"
+  template_id   = "funnel:b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5"
+  remote_id     = "7012345678901234567"
   credential_id = var.tiktok_credential_id
 }
 
-# LinkedIn Ads data source (no report type needed)
-resource "funnel_data_source" "linkedin" {
+# Spotify Ads data source with authOnly contract (no remote identity)
+resource "funnel_data_source" "spotify" {
   workspace     = var.workspace_id
-  type          = "linkedin_api"
-  name          = "LinkedIn Ads"
-  credential_id = var.linkedin_credential_id
+  type          = "spotifyads"
+  name          = "Spotify Ads"
+  template_id   = "funnel:c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6"
+  credential_id = var.spotify_credential_id
+}
+
+# Custom template example
+resource "funnel_data_source" "tiktok_custom" {
+  workspace     = var.workspace_id
+  type          = "tiktok"
+  name          = "TikTok Ads - Custom Template"
+  template_id   = "tiktok-d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1"
+  remote_id     = "7012345678901234567"
+  credential_id = var.tiktok_credential_id
 }
 ```
 
@@ -96,11 +87,12 @@ resource "funnel_data_source" "linkedin" {
 
 ### Optional
 
-- `credential_id` (String) The ID of the credential used to authenticate with the external platform. This references a credential that must have already been created in Funnel. The credential musst have been shared with the System user in Funnel before it can be used here.
+- `credential_id` (String) The ID of the credential used to authenticate with the external platform. This references a credential that must have already been created in Funnel. The credential must have been shared with the System user in Funnel before it can be used here.
 - `download_disabled` (Boolean) When set to `true`, prevents Funnel from downloading data from this data source. Useful for temporarily pausing data collection without deleting the data source configuration. Defaults to `false`.
 - `exclude_data_from_funnel` (Boolean) When set to `true`, excludes data from this source from being included in Funnel aggregations and queries. The data source will still download and store data, but it won't be available for analysis. Could be useful if you want to validate the data before it is used in Funnel. Defaults to `false`.
-- `remote_id` (String) The identifier of the account or entity in the source system (e.g., Google Ads customer ID, Facebook Ads account ID). Required for most advertising platforms. Changing this forces a new resource to be created.
-- `report_type` (String) Specifies which type of report or data granularity to fetch from the platform. Different source types support different report types (e.g., `campaign`, `ad`, `ad_group` for Google Ads). See the documentation for available report types per source. Some sources like `linkedin_api` and `spotifyads` don't require a report type.
+- `remote_id` (String) The identifier of the account or entity in the source system (e.g., TikTok advertiser ID, Facebook Ads account ID). For connectors using the `remoteId` contract type. Mutually exclusive with `remote_struct`. Changing this forces a new resource to be created.
+- `remote_struct` (String, JSON) A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers (e.g., `jsonencode({customer_id = "123", login_customer_id = "456"})` for Google Ads). Mutually exclusive with `remote_id`. Changing this forces a new resource to be created.
+- `template_id` (String) The template ID that defines what data to collect. Built-in templates use the format `funnel:<hash>` (e.g., `funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Custom templates use the format `<prefix>-<hash>` (e.g., `tiktok-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Changing this forces a new resource to be created.
 
 ### Read-Only
 

@@ -219,7 +219,7 @@ func (v *remoteFieldsExclusivityValidator) MarkdownDescription(ctx context.Conte
 	return "Validates that `remote_id` and `remote_struct` are not both specified."
 }
 
-func (v *remoteFieldsExclusivityValidator) ValidateResource(ctx context.Context, req resource.ValidateResourceRequest, resp *resource.ValidateResourceResponse) {
+func (v *remoteFieldsExclusivityValidator) ValidateResource(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var remoteId types.String
 	var remoteStruct types.String
 

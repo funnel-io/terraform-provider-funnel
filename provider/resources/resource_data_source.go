@@ -2,14 +2,17 @@ package resources
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
+	"terraform-provider-funnel/provider/planmodifiers"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -22,6 +25,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &DataSourceResource{}
 var _ resource.ResourceWithImportState = &DataSourceResource{}
+var _ resource.ResourceWithConfigValidators = &DataSourceResource{}
 
 func NewDataSourceResource() resource.Resource {
 	return &DataSourceResource{}
@@ -38,34 +42,38 @@ type DataSourceResourceModel struct {
 	Name             types.String `tfsdk:"name"`
 	DownloadDisabled types.Bool   `tfsdk:"download_disabled"`
 	RemoteId         types.String `tfsdk:"remote_id"`
+	RemoteStruct     types.String `tfsdk:"remote_struct"`
 	ExcludeFromMeld  types.Bool   `tfsdk:"exclude_data_from_funnel"`
 	State            types.String `tfsdk:"state"`
 	CredentialId     types.String `tfsdk:"credential_id"`
-	ReportType       types.String `tfsdk:"report_type"`
+	TemplateId       types.String `tfsdk:"template_id"`
 }
 
 type DataSourceJSON struct {
-	Key              string `json:"key"`
-	Type             string `json:"type"`
-	Id               string `json:"id"`
-	FunnelAccountId  string `json:"funnelAccountId"`
-	Name             string `json:"name"`
-	ConnectionId     string `json:"connectionId,omitempty"`
-	State            string `json:"state"`
-	ExcludeFromMeld  bool   `json:"excludeFromMeld"`
-	DownloadDisabled bool   `json:"downloadDisabled,omitempty"`
-	RemoteId         string `json:"remoteId,omitempty"`
+	Key              string          `json:"key"`
+	Type             string          `json:"type"`
+	Id               string          `json:"id"`
+	FunnelAccountId  string          `json:"funnelAccountId"`
+	Name             string          `json:"name"`
+	ConnectionId     string          `json:"connectionId,omitempty"`
+	State            string          `json:"state"`
+	ExcludeFromMeld  bool            `json:"excludeFromMeld"`
+	DownloadDisabled bool            `json:"downloadDisabled,omitempty"`
+	RemoteId         string          `json:"remoteId,omitempty"`
+	RemoteStruct     json.RawMessage `json:"remoteStruct,omitempty"`
+	TemplateId       string          `json:"templateId,omitempty"`
 }
 
 type CreateDataSourceRequest struct {
-	FunnelAccountId  string `json:"funnelAccountId"`
-	Type             string `json:"type"`
-	Name             string `json:"name"`
-	ConnectionId     string `json:"connectionId,omitempty"`
-	RemoteId         string `json:"remoteId,omitempty"`
-	ReportType       string `json:"reportType,omitempty"`
-	ExcludeFromMeld  bool   `json:"excludeFromMeld,omitempty"`
-	DownloadDisabled bool   `json:"downloadDisabled,omitempty"`
+	FunnelAccountId  string          `json:"funnelAccountId"`
+	Type             string          `json:"type"`
+	Name             string          `json:"name"`
+	ConnectionId     string          `json:"connectionId,omitempty"`
+	RemoteId         string          `json:"remoteId,omitempty"`
+	RemoteStruct     json.RawMessage `json:"remoteStruct,omitempty"`
+	TemplateId       string          `json:"templateId,omitempty"`
+	ExcludeFromMeld  bool            `json:"excludeFromMeld,omitempty"`
+	DownloadDisabled bool            `json:"downloadDisabled,omitempty"`
 }
 
 type UpdateDataSourceRequest struct {
@@ -151,9 +159,30 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Optional:            true,
 				Computed:            true,
 			},
-			"report_type": schema.StringAttribute{
-				MarkdownDescription: "Specifies which type of report or data granularity to fetch from the platform. Different source types support different report types (e.g., `campaign`, `ad`, `ad_group` for Google Ads). See the documentation for available report types per source. Some sources like `linkedin_api` and `spotifyads` don't require a report type.",
+			"template_id": schema.StringAttribute{
+				MarkdownDescription: "The template ID that defines what data to collect. Built-in templates use the format `funnel:<hash>` (e.g., `funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Custom templates use the format `<prefix>-<hash>` (e.g., `tiktok-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Changing this forces a new resource to be created.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^(funnel:|[A-Za-z0-9_-]{1,127}-)[a-z0-9]{32}$`),
+						"must be a valid template ID: 'funnel:<32-char-hash>' for built-in or '<prefix>-<32-char-hash>' for custom templates",
+					),
+				},
+			},
+			"remote_struct": schema.StringAttribute{
+				MarkdownDescription: "A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers (e.g., `jsonencode({customer_id = \"123\", login_customer_id = \"456\"})` for Google Ads). Mutually exclusive with `remote_id`. Changing this forces a new resource to be created.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+					planmodifiers.JSONSemanticEqual(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(2),
+				},
 			},
 		},
 	}
@@ -172,6 +201,42 @@ func (r *DataSourceResource) Configure(ctx context.Context, req resource.Configu
 		return
 	}
 	r.config = config
+}
+
+func (r *DataSourceResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&remoteFieldsExclusivityValidator{},
+	}
+}
+
+type remoteFieldsExclusivityValidator struct{}
+
+func (v *remoteFieldsExclusivityValidator) Description(ctx context.Context) string {
+	return "Validates that remote_id and remote_struct are not both specified."
+}
+
+func (v *remoteFieldsExclusivityValidator) MarkdownDescription(ctx context.Context) string {
+	return "Validates that `remote_id` and `remote_struct` are not both specified."
+}
+
+func (v *remoteFieldsExclusivityValidator) ValidateResource(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var remoteId types.String
+	var remoteStruct types.String
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("remote_id"), &remoteId)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("remote_struct"), &remoteStruct)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !remoteId.IsNull() && !remoteId.IsUnknown() && !remoteStruct.IsNull() && !remoteStruct.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("remote_struct"),
+			"Conflicting Remote Identity Fields",
+			"Only one of remote_id or remote_struct may be specified. Use remote_id for connectors with a single account identifier, or remote_struct for connectors requiring multiple identifiers.",
+		)
+	}
 }
 
 func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -200,8 +265,11 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 	if !data.RemoteId.IsNull() && !data.RemoteId.IsUnknown() {
 		payload.RemoteId = data.RemoteId.ValueString()
 	}
-	if !data.ReportType.IsNull() && !data.ReportType.IsUnknown() {
-		payload.ReportType = data.ReportType.ValueString()
+	if !data.RemoteStruct.IsNull() && !data.RemoteStruct.IsUnknown() {
+		payload.RemoteStruct = json.RawMessage(data.RemoteStruct.ValueString())
+	}
+	if !data.TemplateId.IsNull() && !data.TemplateId.IsUnknown() {
+		payload.TemplateId = data.TemplateId.ValueString()
 	}
 
 	respObj, err := funnel.CreateWorkspaceEntity[CreateDataSourceRequest, DataSourceJSON](ctx, "datasources", r.config, data.Workspace.ValueString(), payload)
@@ -238,6 +306,18 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 		data.RemoteId = types.StringValue(respObj.RemoteId)
 	} else {
 		data.RemoteId = types.StringNull()
+	}
+
+	if len(respObj.RemoteStruct) > 0 && string(respObj.RemoteStruct) != "null" {
+		data.RemoteStruct = types.StringValue(string(respObj.RemoteStruct))
+	} else {
+		data.RemoteStruct = types.StringNull()
+	}
+
+	if respObj.TemplateId != "" {
+		data.TemplateId = types.StringValue(respObj.TemplateId)
+	} else {
+		data.TemplateId = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -281,6 +361,18 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
 		data.RemoteId = types.StringValue(ds.RemoteId)
 	} else {
 		data.RemoteId = types.StringNull()
+	}
+
+	if len(ds.RemoteStruct) > 0 && string(ds.RemoteStruct) != "null" {
+		data.RemoteStruct = types.StringValue(string(ds.RemoteStruct))
+	} else {
+		data.RemoteStruct = types.StringNull()
+	}
+
+	if ds.TemplateId != "" {
+		data.TemplateId = types.StringValue(ds.TemplateId)
+	} else {
+		data.TemplateId = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -344,6 +436,18 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 		data.RemoteId = types.StringNull()
 	}
 
+	if len(respObj.RemoteStruct) > 0 && string(respObj.RemoteStruct) != "null" {
+		data.RemoteStruct = types.StringValue(string(respObj.RemoteStruct))
+	} else {
+		data.RemoteStruct = types.StringNull()
+	}
+
+	if respObj.TemplateId != "" {
+		data.TemplateId = types.StringValue(respObj.TemplateId)
+	} else {
+		data.TemplateId = types.StringNull()
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -404,6 +508,20 @@ func (r *DataSourceResource) ImportState(ctx context.Context, req resource.Impor
 		remoteId = types.StringNull()
 	}
 
+	var remoteStruct types.String
+	if len(ds.RemoteStruct) > 0 && string(ds.RemoteStruct) != "null" {
+		remoteStruct = types.StringValue(string(ds.RemoteStruct))
+	} else {
+		remoteStruct = types.StringNull()
+	}
+
+	var templateId types.String
+	if ds.TemplateId != "" {
+		templateId = types.StringValue(ds.TemplateId)
+	} else {
+		templateId = types.StringNull()
+	}
+
 	data := DataSourceResourceModel{
 		Id:               types.StringValue(dataSourceID),
 		Workspace:        types.StringValue(ds.FunnelAccountId),
@@ -414,6 +532,8 @@ func (r *DataSourceResource) ImportState(ctx context.Context, req resource.Impor
 		State:            types.StringValue(ds.State),
 		CredentialId:     credentialId,
 		RemoteId:         remoteId,
+		RemoteStruct:     remoteStruct,
+		TemplateId:       templateId,
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

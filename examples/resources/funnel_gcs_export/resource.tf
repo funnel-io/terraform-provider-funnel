@@ -26,7 +26,7 @@ resource "funnel_gcs_export" "basic" {
   enabled   = true
   schedule  = "0 2 * * *" # Daily at 2 AM
 
-  destination {
+  destination = {
     bucket             = "my-funnel-exports"
     path               = "marketing-data"
     output_id_template = "funnel_export_{date}"
@@ -41,17 +41,17 @@ resource "funnel_gcs_export" "basic" {
     data.funnel_export_field.cost
   ]
 
-  format {
+  format = {
     type    = "parquet"
     metrics = "export"
   }
 
-  range {
-    rolling_start {
+  range = {
+    rolling_start = {
       period  = "days"
       periods = -7
     }
-    rolling_end {
+    rolling_end = {
       period  = "days"
       periods = -1
     }

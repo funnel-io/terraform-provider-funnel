@@ -72,7 +72,7 @@ resource "funnel_data_source" "tiktok_custom" {
 
 ### Optional
 
-- `credential_id` (String) The ID of the credential used to authenticate with the external platform. This references a credential that must have already been created in Funnel. The credential musst have been shared with the System user in Funnel before it can be used here.
+- `credential_id` (String) The ID of the credential used to authenticate with the external platform. This references a credential that must have already been created in Funnel. The credential must have been shared with the System user in Funnel before it can be used here.
 - `download_disabled` (Boolean) When set to `true`, prevents Funnel from downloading data from this data source. Useful for temporarily pausing data collection without deleting the data source configuration. Defaults to `false`.
 - `exclude_data_from_funnel` (Boolean) When set to `true`, excludes data from this source from being included in Funnel aggregations and queries. The data source will still download and store data, but it won't be available for analysis. Could be useful if you want to validate the data before it is used in Funnel. Defaults to `false`.
 - `remote_id` (String) The identifier of the account or entity in the source system (e.g., Google Ads customer ID, Facebook Ads account ID). Required for most advertising platforms. Changing this forces a new resource to be created.

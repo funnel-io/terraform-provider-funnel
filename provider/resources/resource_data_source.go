@@ -155,7 +155,7 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Computed:            true,
 			},
 			"credential_id": schema.StringAttribute{
-				MarkdownDescription: "The ID of the credential used to authenticate with the external platform. This references a credential that must have already been created in Funnel. The credential musst have been shared with the System user in Funnel before it can be used here.",
+				MarkdownDescription: "The ID of the credential used to authenticate with the external platform. This references a credential that must have already been created in Funnel. The credential must have been shared with the System user in Funnel before it can be used here.",
 				Optional:            true,
 				Computed:            true,
 			},

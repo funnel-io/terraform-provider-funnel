@@ -46,7 +46,7 @@ You could also go into the resource you want to manage with Terraform and get th
 
 ## Exports
 
-Exports are created with the `funnel_<type>_export` resource. The available types are `bigquery`, `snowflake` and `gcs`. All the fields outside of the `destination` block are shared with the other export types.
+Exports are created with the `funnel_<type>_export` resource. The available types are `bigquery`, `snowflake`, `gcs`, and `measurement`. All the fields outside of the `destination` block are shared with the other export types.
 
 ## Fields
 
@@ -125,8 +125,8 @@ If you receive an error like the one below when running `terraform plan` or `ter
 
 ## 429 Too Many Requests error
 
-If you receive a `429 Too Many Requests` error when making API calls, it means that you have exceeded the rate limit for the Funnel API. 
-If it happens frequently, consider contacing Funnel support to discuss your use case.
+If you receive a `429 Too Many Requests` error when making API calls, it means that you have exceeded the rate limit for the Funnel API.
+If it happens frequently, consider contacting Funnel support to discuss your use case.
 
 ##### Import command
 

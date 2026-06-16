@@ -48,7 +48,7 @@ resource "funnel_measurement_export" "basic" {
   enabled   = true
   schedule  = "0 5 * * *" # Daily at 5 AM
 
-  destination {
+  destination = {
     table_name = "measurement_daily_performance"
   }
 
@@ -59,17 +59,17 @@ resource "funnel_measurement_export" "basic" {
     data.funnel_export_field.cost
   ]
 
-  format {
+  format = {
     type    = "parquet"
     metrics = "export"
   }
 
-  range {
-    rolling_start {
+  range = {
+    rolling_start = {
       period  = "days"
       periods = -7
     }
-    rolling_end {
+    rolling_end = {
       period  = "days"
       periods = -1
     }

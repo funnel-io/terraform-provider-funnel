@@ -57,4 +57,9 @@ resource "funnel_snowflake_export" "basic" {
       periods = -1
     }
   }
+
+  partition_schema = {
+    by  = "date"
+    per = "month"
+  }
 }

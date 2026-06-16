@@ -71,6 +71,11 @@ resource "funnel_gcs_export" "basic" {
       periods = -1
     }
   }
+
+  partition_schema = {
+    by  = "date"
+    per = "month"
+  }
 }
 ```
 
@@ -83,6 +88,7 @@ resource "funnel_gcs_export" "basic" {
 - `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
 - `format` (Attributes) Export format (see [below for nested schema](#nestedatt--format))
 - `name` (String) Export name
+- `partition_schema` (Attributes) Partition schema for the export. **Recommended:** Use `by = "date"` and `per = "month"`. (see [below for nested schema](#nestedatt--partition_schema))
 - `range` (Attributes) Export range (see [below for nested schema](#nestedatt--range))
 - `schedule` (String) Export schedule (e.g., cron expression)
 - `workspace` (String) Funnel workspace ID
@@ -93,7 +99,6 @@ resource "funnel_gcs_export" "basic" {
 - `enabled` (Boolean) Whether the export is enabled
 - `filters` (Attributes List) Export filters (see [below for nested schema](#nestedatt--filters))
 - `notes` (String) Export notes that can be seen in the Funnel app
-- `partition_schema` (Attributes) Partition schema for the export (see [below for nested schema](#nestedatt--partition_schema))
 
 ### Read-Only
 
@@ -132,6 +137,15 @@ Required:
 
 - `metrics` (String) Metrics format for the export
 - `type` (String) Format type (Parquet, CSV or TSV)
+
+
+<a id="nestedatt--partition_schema"></a>
+### Nested Schema for `partition_schema`
+
+Required:
+
+- `by` (String) Field to partition by. One of: `none`, `date`, or `snapshot`. Snapshot is only supported for measurement exports. **Recommended:** `date`
+- `per` (String) Type of partitioning. One of: `day`, `week`, `month`, `quarter`, or `year`. **Recommended:** `month`
 
 
 <a id="nestedatt--range"></a>
@@ -183,13 +197,3 @@ Required:
 
 - `operation` (String) Filter operation (e.g., equals, contains)
 - `value` (String) Value to filter by
-
-
-
-<a id="nestedatt--partition_schema"></a>
-### Nested Schema for `partition_schema`
-
-Required:
-
-- `by` (String) Field to partition by (none or date)
-- `per` (String) Type of partitioning (e.g., day, week, month)

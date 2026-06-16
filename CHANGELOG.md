@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-06-16
+
+### Added
+
+- Support for `template_id` in data source resource to replace deprecated `report_type`.
+- Support for `remote_struct` configuration in data source resource.
+
+### Fixed
+
+- Made `partition_schema` required for export resources (BigQuery, GCS, Snowflake).
+- Updated partition schema validation to support `snapshot` partitioning (measurement exports only).
+- Expanded `per` field validation to include `week` and `quarter` options.
+- Fixed incorrect export examples in documentation and example files.
+- Fixed various typos in provider and resource documentation.
+
+### Changed
+
+- Replaced `report_type` with `template_id` in data source resource (breaking change).
+- Enhanced export resource documentation with recommended partition schema settings.
+- Updated data source documentation to remove report type references.
+
 ## [0.2.0] - 2026-04-24
 
 ### Added

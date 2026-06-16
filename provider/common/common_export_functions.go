@@ -291,21 +291,21 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 				},
 			},
 			"partition_schema": schema.SingleNestedAttribute{
-				MarkdownDescription: "Partition schema for the export",
-				Optional:            true,
+				MarkdownDescription: "Partition schema for the export. **Recommended:** Use `by = \"date\"` and `per = \"month\"`.",
+				Required:            true,
 				Attributes: map[string]schema.Attribute{
 					"by": schema.StringAttribute{
-						MarkdownDescription: "Field to partition by (none or date)",
+						MarkdownDescription: "Field to partition by. One of: `none`, `date`, or `snapshot`. Snapshot is only supported for measurement exports. **Recommended:** `date`",
 						Required:            true,
 						Validators: []validator.String{
-							stringvalidator.OneOf("none", "date"),
+							stringvalidator.OneOf("none", "date", "snapshot"),
 						},
 					},
 					"per": schema.StringAttribute{
-						MarkdownDescription: "Type of partitioning (e.g., day, week, month)",
+						MarkdownDescription: "Type of partitioning. One of: `day`, `week`, `month`, `quarter`, or `year`. **Recommended:** `month`",
 						Required:            true,
 						Validators: []validator.String{
-							stringvalidator.OneOf("day", "month", "year", "all"),
+							stringvalidator.OneOf("day", "week", "month", "quarter", "year"),
 						},
 					},
 				},

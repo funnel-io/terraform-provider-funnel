@@ -260,8 +260,10 @@ func getMeasurementExport(ctx context.Context, config *common.FunnelProviderMode
 		export.Destination.SnapshotSourceId = types.StringValue(respObj.Snapshot.SnapshotSourceId)
 		export.Destination.SnapshotSourceType = types.StringValue(respObj.Snapshot.SnapshotSourceType)
 
-		export.PartitionSchema.By = types.StringValue("snapshot")
-		export.PartitionSchema.Per = types.StringNull()
+		export.PartitionSchema = common.PartitionSchema{
+			By:  types.StringValue("snapshot"),
+			Per: types.StringNull(),
+		}
 	}
 
 	return &export, nil

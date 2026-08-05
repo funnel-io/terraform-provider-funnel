@@ -89,7 +89,7 @@ func (p *funnelProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	// Get Auth0 token
 	token, err := auth.GetAccessToken(config.ClientId.ValueString(), config.ClientSecret.ValueString(), config.Environment.ValueString(), ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to get Auth0 token", fmt.Sprintf("Could not get Auth0 token: %v", err))
+		resp.Diagnostics.AddError("Failed to get Auth0 token", fmt.Sprintf("%v", err))
 		return
 	}
 	config.Token = token

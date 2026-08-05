@@ -48,7 +48,7 @@ func GetAccessToken(clientID, clientSecret, environment string, ctx context.Cont
 func getAccessTokenWithEndpoint(clientID, clientSecret string, ctx context.Context, tokenEndpoint, audience string) (string, error) {
 	tflog.Info(ctx, "Getting Auth0 access token", map[string]any{"client_id": clientID, "audience": audience, "token_endpoint": tokenEndpoint})
 
-	token, err := fetchToken(clientID, clientSecret, audience, tokenEndpoint)
+	token, err := fetchToken(clientID, clientSecret, audience, tokenEndpoint, ctx)
 	if err != nil {
 		return "", err
 	}
@@ -56,7 +56,7 @@ func getAccessTokenWithEndpoint(clientID, clientSecret string, ctx context.Conte
 	return "Bearer " + token.AccessToken, nil
 }
 
-func fetchToken(clientID, clientSecret, audience, tokenEndpoint string) (*TokenResponse, error) {
+func fetchToken(clientID, clientSecret, audience, tokenEndpoint string, ctx context.Context) (*TokenResponse, error) {
 	payload := map[string]string{
 		"client_id":     clientID,
 		"client_secret": clientSecret,
@@ -84,7 +84,15 @@ func fetchToken(clientID, clientSecret, audience, tokenEndpoint string) (*TokenR
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to obtain Auth0 token: %d %s - %s", resp.StatusCode, resp.Status, string(body))
+
+		tflog.Error(ctx, "Failed to obtain Auth0 token", map[string]any{"status": resp.Status, "body": string(body)})
+
+		error_message := "Authentication failed. Verify that CLIENT_ID and CLIENT_SECRET are correct (the secret may have been rotated). Check your Terraform System user in the Funnel Subscription overview."
+	 	if resp.StatusCode == http.StatusForbidden {
+			error_message = "Authentication failed. Verify that CLIENT_ID belongs to a Terraform System user and that you're targeting the correct environment. Check your Terraform System user in the Funnel Subscription overview."
+		}
+
+		return nil, fmt.Errorf("%s", error_message)
 	}
 
 	var tokenResp TokenResponse

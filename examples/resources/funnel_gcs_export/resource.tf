@@ -48,11 +48,11 @@ resource "funnel_gcs_export" "basic" {
 
   range = {
     rolling_start = {
-      period  = "days"
-      periods = -7
+      period  = "day"
+      periods = 7
     }
     rolling_end = {
-      period  = "days"
+      period  = "day"
       periods = -1
     }
   }

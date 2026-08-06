@@ -256,19 +256,19 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 						Required:            false,
 					},
 					"rolling_start": schema.SingleNestedAttribute{
-						MarkdownDescription: "Relative start date for the time range of the export",
+						MarkdownDescription: "Relative start date for the time range of the export.",
 						Optional:            true,
 						Required:            false,
 						Attributes: map[string]schema.Attribute{
 							"periods": schema.Int64Attribute{
-								MarkdownDescription: "Number of periods for the relative time range",
+								MarkdownDescription: "Number of periods for the relative time range. Only positive values are allowed.",
 								Required:            true,
 								Validators: []validator.Int64{
 									int64validator.AtLeast(1),
 								},
 							},
 							"period": schema.StringAttribute{
-								MarkdownDescription: "Unit for the relative time range (e.g., days, weeks)",
+								MarkdownDescription: "Unit for the relative time range (day, week, month, quarter, year).",
 								Required:            true,
 							},
 						},
@@ -279,11 +279,11 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 						Required:            false,
 						Attributes: map[string]schema.Attribute{
 							"periods": schema.Int64Attribute{
-								MarkdownDescription: "Number of periods for the relative time range, negative value means past (e.g. periods=-7 and period=days means last 7 days)",
+								MarkdownDescription: "Number of periods for the relative time range, negative value means past. For example periods=-7 and period=day means last 7 days.",
 								Required:            true,
 							},
 							"period": schema.StringAttribute{
-								MarkdownDescription: "Unit for the relative time range (e.g., days, weeks)",
+								MarkdownDescription: "Unit for the relative time range (day, week, month, quarter, year).",
 								Required:            true,
 							},
 						},

@@ -55,17 +55,17 @@ resource "funnel_bigquery_export" "basic" {
   ]
 
   format = {
-    type    = "parquet"
+    type    = "csv"
     metrics = "export"
   }
 
   range = {
     rolling_start = {
-      period  = "days"
-      periods = -7
+      period  = "day"
+      periods = 7
     }
     rolling_end = {
-      period  = "days"
+      period  = "day"
       periods = -1
     }
   }
@@ -148,7 +148,7 @@ Optional:
 
 - `end` (String) End date for the export range
 - `rolling_end` (Attributes) Relative end date for the time range of the export (see [below for nested schema](#nestedatt--range--rolling_end))
-- `rolling_start` (Attributes) Relative start date for the time range of the export (see [below for nested schema](#nestedatt--range--rolling_start))
+- `rolling_start` (Attributes) Relative start date for the time range of the export. (see [below for nested schema](#nestedatt--range--rolling_start))
 - `start` (String) Start date for the export range
 
 <a id="nestedatt--range--rolling_end"></a>
@@ -156,8 +156,8 @@ Optional:
 
 Required:
 
-- `period` (String) Unit for the relative time range (e.g., days, weeks)
-- `periods` (Number) Number of periods for the relative time range, negative value means past (e.g. periods=-7 and period=days means last 7 days)
+- `period` (String) Unit for the relative time range (day, week, month, quarter, year).
+- `periods` (Number) Number of periods for the relative time range, negative value means past. For example periods=-7 and period=day means last 7 days.
 
 
 <a id="nestedatt--range--rolling_start"></a>
@@ -165,8 +165,8 @@ Required:
 
 Required:
 
-- `period` (String) Unit for the relative time range (e.g., days, weeks)
-- `periods` (Number) Number of periods for the relative time range
+- `period` (String) Unit for the relative time range (day, week, month, quarter, year).
+- `periods` (Number) Number of periods for the relative time range. Only positive values are allowed.
 
 
 

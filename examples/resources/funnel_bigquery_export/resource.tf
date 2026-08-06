@@ -40,17 +40,17 @@ resource "funnel_bigquery_export" "basic" {
   ]
 
   format = {
-    type    = "parquet"
+    type    = "csv"
     metrics = "export"
   }
 
   range = {
     rolling_start = {
-      period  = "days"
-      periods = -7
+      period  = "day"
+      periods = 7
     }
     rolling_end = {
-      period  = "days"
+      period  = "day"
       periods = -1
     }
   }

@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"terraform-provider-funnel/provider"
+	"terraform-provider-funnel/provider/funnel"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
@@ -20,6 +21,8 @@ var (
 )
 
 func main() {
+	funnel.Version = version
+
 	var debug bool
 
 	flag.BoolVar(&debug, "debug", false, "set to true to run the provider with support for debuggers like delve")

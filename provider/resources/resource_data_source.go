@@ -160,15 +160,15 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Computed:            true,
 			},
 			"template_id": schema.StringAttribute{
-				MarkdownDescription: "The template ID that defines what data to collect. Built-in templates use the format `funnel:<hash>` (e.g., `funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Custom templates use the format `<prefix>-<hash>` (e.g., `tiktok-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Changing this forces a new resource to be created.",
+				MarkdownDescription: "The template ID that defines what data to collect. Built-in templates use the format `funnel:<connector_prefix>-<slug>` (e.g., `funnel:tiktok-my_template_slug`). Custom templates use the format `<connector_prefix>-<hash>` (e.g., `tiktok-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Changing this forces a new resource to be created.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^(funnel:|[A-Za-z0-9_-]{1,127}-)[a-z0-9]{32}$`),
-						"must be a valid template ID: 'funnel:<32-char-hash>' for built-in or '<prefix>-<32-char-hash>' for custom templates",
+						regexp.MustCompile(`^(funnel:[A-Za-z0-9_-]{1,127}|[A-Za-z0-9_-]{1,127}-[a-z0-9]{32})$`),
+						"must be a valid template ID: 'funnel:<slug>' for built-in or '<prefix>-<32-char-hash>' for custom templates",
 					),
 				},
 			},

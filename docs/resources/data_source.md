@@ -77,7 +77,7 @@ resource "funnel_data_source" "tiktok_custom" {
 - `exclude_data_from_funnel` (Boolean) When set to `true`, excludes data from this source from being included in Funnel aggregations and queries. The data source will still download and store data, but it won't be available for analysis. Could be useful if you want to validate the data before it is used in Funnel. Defaults to `false`.
 - `remote_id` (String) The identifier of the account or entity in the source system (e.g., Google Ads customer ID, Facebook Ads account ID). Required for most advertising platforms. Changing this forces a new resource to be created.
 - `remote_struct` (String) A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers (e.g., `jsonencode({customer_id = "123", login_customer_id = "456"})` for Google Ads). Mutually exclusive with `remote_id`. Changing this forces a new resource to be created.
-- `template_id` (String) The template ID that defines what data to collect. Built-in templates use the format `funnel:<hash>` (e.g., `funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Custom templates use the format `<prefix>-<hash>` (e.g., `tiktok-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Changing this forces a new resource to be created.
+- `template_id` (String) The template ID that defines what data to collect. Built-in templates use the format `funnel:<connector_prefix>-<slug>` (e.g., `funnel:tiktok-my_template_slug`). Custom templates use the format `<connector_prefix>-<hash>` (e.g., `tiktok-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Changing this forces a new resource to be created.
 
 ### Read-Only
 

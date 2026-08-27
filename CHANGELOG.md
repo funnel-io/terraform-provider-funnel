@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.3] - 2026-08-31
 
+### Added
+
+- Add the option to create a demo data source that produces demo (test) data in Funnel instead of connecting to the external platform by setting `is_demo` to true for `funnel_data_source`.
+
 ### Changed
 
 - Updated the Funnel data source `template_id` validation to accept the slug based template IDs.

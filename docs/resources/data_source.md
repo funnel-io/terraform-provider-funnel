@@ -11,19 +11,45 @@ Manages a Funnel data source, which represents a connection to an advertising pl
 
 ~> **Note:** Before creating a data source, ensure that you have shared the necessary credential with the System user in Funnel.
 
+## Data source credentials
+
+A credential for the platform you are setting up has to be shared to the Terraform System user that the Funnel `CLIENT_ID` is connected to.
+
+### To see the credentials shared to the System user
+
+Go into Funnel and navigate to your Subscription overview and into the Users section. Press the System users tab and you'll see all your System users.
+Click on the name of the one you're using for Terraform and it will load a list of the shared platform credentials.
+Copy the Credential ID for your platform into the `credential_id` field for your data source.
+
+### To share a credential you own to the System user
+
+Go into Funnel and navigate to My credentials in your profile menu.
+Click on the credential you want to share and press the Share button. Click the Share button and choose the Terraform System user you're using with Terraform.
+
+## Data source templates
+
+The data from the platform you'll download into Funnel when creating a data source is defined by the template provided. In Funnel there are built in templates but you can also create your own custom ones.
+Go into Funnel and navigate to your Subscription overview and the templates section and all templates are listed there. The default view is a list of your custom templates.
+Click on the Funnel templates button to see the built in templates. Click on a template and copy the Template ID for your platform into the `template_id` field for your data source.
+
+## Data source remote ids and remote structs
+
+For a full list of the how remote_struct should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).
+Copy the remote ID for your platform into the `remote_id` field for your data source or create a `remote_struct` field that has follows the guide for your platform.
+
 ## Example Usage
 
 ```terraform
-# Google Ads data source with remoteStruct contract
-resource "funnel_data_source" "adwords_campaign" {
+# Google analytics data source with remoteStruct contract
+resource "funnel_data_source" "google_analytics" {
   workspace     = var.workspace_id
-  type          = "adwords"
-  name          = "Google Ads - Main Account"
+  type          = "googleanalytics"
+  name          = "Google Analytics - With parent"
   template_id   = "funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-  credential_id = var.google_ads_credential_id
+  credential_id = var.google_analytics_credential_id
   remote_struct = jsonencode({
-    customer_id       = "123-456-7890"
-    login_customer_id = "098-765-4321"
+    remote_id        = "123-456-7890"
+    remote_parent_id = "098-765-4321"
   })
 
   # Default values
@@ -76,7 +102,7 @@ resource "funnel_data_source" "tiktok_custom" {
 - `download_disabled` (Boolean) When set to `true`, prevents Funnel from downloading data from this data source. Useful for temporarily pausing data collection without deleting the data source configuration. Defaults to `false`.
 - `exclude_data_from_funnel` (Boolean) When set to `true`, excludes data from this source from being included in Funnel aggregations and queries. The data source will still download and store data, but it won't be available for analysis. Could be useful if you want to validate the data before it is used in Funnel. Defaults to `false`.
 - `remote_id` (String) The identifier of the account or entity in the source system (e.g., Google Ads customer ID, Facebook Ads account ID). Required for most advertising platforms. Changing this forces a new resource to be created.
-- `remote_struct` (String) A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers (e.g., `jsonencode({customer_id = "123", login_customer_id = "456"})` for Google Ads). Mutually exclusive with `remote_id`. Changing this forces a new resource to be created.
+- `remote_struct` (String) A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers. Mutually exclusive with `remote_id`. Changing this forces a new resource to be created. For a full list of the how remote_struct should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).
 - `template_id` (String) The template ID that defines what data to collect. Built-in templates use the format `funnel:<connector_prefix>-<slug>` (e.g., `funnel:tiktok-my_template_slug`). Custom templates use the format `<connector_prefix>-<hash>` (e.g., `tiktok-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Changing this forces a new resource to be created.
 
 ### Read-Only

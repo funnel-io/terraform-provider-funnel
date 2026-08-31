@@ -1,13 +1,13 @@
-# Google Ads data source with remoteStruct contract
-resource "funnel_data_source" "adwords_campaign" {
+# Google analytics data source with remoteStruct contract
+resource "funnel_data_source" "google_analytics" {
   workspace     = var.workspace_id
-  type          = "adwords"
-  name          = "Google Ads - Main Account"
+  type          = "googleanalytics"
+  name          = "Google Analytics - With parent"
   template_id   = "funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-  credential_id = var.google_ads_credential_id
+  credential_id = var.google_analytics_credential_id
   remote_struct = jsonencode({
-    customer_id       = "123-456-7890"
-    login_customer_id = "098-765-4321"
+    remote_id        = "123-456-7890"
+    remote_parent_id = "098-765-4321"
   })
 
   # Default values

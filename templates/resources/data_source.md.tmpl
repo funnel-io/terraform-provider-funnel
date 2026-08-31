@@ -11,6 +11,32 @@ description: |-
 
 ~> **Note:** Before creating a data source, ensure that you have shared the necessary credential with the System user in Funnel.
 
+## Data source credentials
+
+A credential for the platform you are setting up has to be shared to the Terraform System user that the Funnel `CLIENT_ID` is connected to.
+
+### To see the credentials shared to the System user
+
+Go into Funnel and navigate to your Subscription overview and into the Users section. Press the System users tab and you'll see all your System users.
+Click on the name of the one you're using for Terraform and it will load a list of the shared platform credentials.
+Copy the Credential ID for your platform into the `credential_id` field for your data source.
+
+### To share a credential you own to the System user
+
+Go into Funnel and navigate to My credentials in your profile menu.
+Click on the credential you want to share and press the Share button. Click the Share button and choose the Terraform System user you're using with Terraform.
+
+## Data source templates
+
+The data from the platform you'll download into Funnel when creating a data source is defined by the template provided. In Funnel there are built in templates but you can also create your own custom ones.
+Go into Funnel and navigate to your Subscription overview and the templates section and all templates are listed there. The default view is a list of your custom templates.
+Click on the Funnel templates button to see the built in templates. Click on a template and copy the Template ID for your platform into the `template_id` field for your data source.
+
+## Data source remote ids and remote structs
+
+For a full list of the how remote_struct should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).
+Copy the remote ID for your platform into the `remote_id` field for your data source or create a `remote_struct` field that has follows the guide for your platform.
+
 ## Example Usage
 
 {{ tffile "examples/resources/funnel_data_source/resource.tf" }}

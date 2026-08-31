@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -47,6 +49,7 @@ type DataSourceResourceModel struct {
 	State            types.String `tfsdk:"state"`
 	CredentialId     types.String `tfsdk:"credential_id"`
 	TemplateId       types.String `tfsdk:"template_id"`
+	IsDemo           types.Bool   `tfsdk:"is_demo"`
 }
 
 type DataSourceJSON struct {
@@ -62,6 +65,7 @@ type DataSourceJSON struct {
 	RemoteId         string          `json:"remoteId,omitempty"`
 	RemoteStruct     json.RawMessage `json:"remoteStruct,omitempty"`
 	TemplateId       string          `json:"templateId,omitempty"`
+	IsDemo           bool            `json:"isDemo"`
 }
 
 type CreateDataSourceRequest struct {
@@ -74,6 +78,7 @@ type CreateDataSourceRequest struct {
 	TemplateId       string          `json:"templateId,omitempty"`
 	ExcludeFromMeld  bool            `json:"excludeFromMeld,omitempty"`
 	DownloadDisabled bool            `json:"downloadDisabled,omitempty"`
+	IsDemo           bool            `json:"isDemo,omitempty"`
 }
 
 type UpdateDataSourceRequest struct {
@@ -149,6 +154,15 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				MarkdownDescription: "When set to `true`, excludes data from this source from being included in Funnel aggregations and queries. The data source will still download and store data, but it won't be available for analysis. Could be useful if you want to validate the data before it is used in Funnel. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
+			},
+			"is_demo": schema.BoolAttribute{
+				MarkdownDescription: "When set to `true`, the data source produces demo (test) data in Funnel instead of connecting to the external platform. Defaults to `false`. Changing this forces a new resource to be created.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 			"state": schema.StringAttribute{
 				MarkdownDescription: "The current operational state of the data source in Funnel (e.g., `OK`, `UNAUTHORIZED`, `INVALID`, `DISABLED`). This is managed by Funnel and reflects the health and status of the data source connection.",
@@ -271,6 +285,9 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 	if !data.TemplateId.IsNull() && !data.TemplateId.IsUnknown() {
 		payload.TemplateId = data.TemplateId.ValueString()
 	}
+	if !data.IsDemo.IsNull() && !data.IsDemo.IsUnknown() {
+		payload.IsDemo = data.IsDemo.ValueBool()
+	}
 
 	respObj, err := funnel.CreateWorkspaceEntity[CreateDataSourceRequest, DataSourceJSON](ctx, "datasources", r.config, data.Workspace.ValueString(), payload)
 	if err != nil {
@@ -295,6 +312,7 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 	data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
 	data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
 	data.State = types.StringValue(respObj.State)
+	data.IsDemo = types.BoolValue(respObj.IsDemo)
 
 	if respObj.ConnectionId != "" {
 		data.CredentialId = types.StringValue(respObj.ConnectionId)
@@ -350,6 +368,7 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
 	data.DownloadDisabled = types.BoolValue(ds.DownloadDisabled)
 	data.ExcludeFromMeld = types.BoolValue(ds.ExcludeFromMeld)
 	data.State = types.StringValue(ds.State)
+	data.IsDemo = types.BoolValue(ds.IsDemo)
 
 	if ds.ConnectionId != "" {
 		data.CredentialId = types.StringValue(ds.ConnectionId)
@@ -423,6 +442,7 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 	data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
 	data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
 	data.State = types.StringValue(respObj.State)
+	data.IsDemo = types.BoolValue(respObj.IsDemo)
 
 	if respObj.ConnectionId != "" {
 		data.CredentialId = types.StringValue(respObj.ConnectionId)
@@ -534,6 +554,7 @@ func (r *DataSourceResource) ImportState(ctx context.Context, req resource.Impor
 		RemoteId:         remoteId,
 		RemoteStruct:     remoteStruct,
 		TemplateId:       templateId,
+		IsDemo:           types.BoolValue(ds.IsDemo),
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

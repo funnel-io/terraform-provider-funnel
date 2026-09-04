@@ -2,4 +2,4 @@
 # partOf.domain:funnel-io/product
 
 # Default / main owner (github team):
-*                               @funnel-io/data-out-platform
+*                               @funnel-io/datahub-setup @funnel-io/data-out-platform

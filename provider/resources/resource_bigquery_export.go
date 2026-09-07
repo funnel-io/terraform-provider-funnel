@@ -28,6 +28,7 @@ type ExportBigqueryDestination struct {
 	OutputIdTemplate types.String `tfsdk:"output_id_template"`
 	DatasetId        types.String `tfsdk:"dataset_id"`
 	ProjectId        types.String `tfsdk:"project_id"`
+	CredentialId     types.String `tfsdk:"credential_id"`
 }
 
 type BigqueryResourceModel struct {
@@ -43,8 +44,12 @@ type FunnelBigqueryDestinationJSON struct {
 	SingleTable      bool   `json:"singleTable"`
 }
 
+// CredentialRef/CredentialType live on the root of the export in Funnel, but are
+// configured as part of the destination in Terraform.
 type FunnelBigqueryJSON struct {
-	Destination FunnelBigqueryDestinationJSON `json:"destination"`
+	Destination    FunnelBigqueryDestinationJSON `json:"destination"`
+	CredentialRef  string                        `json:"credentialRef,omitempty"`
+	CredentialType string                        `json:"credentialType,omitempty"`
 	common.ExportSharedJSON
 }
 
@@ -58,16 +63,20 @@ func (r *BigqueryResource) Schema(ctx context.Context, req resource.SchemaReques
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"output_id_template": schema.StringAttribute{
-				MarkdownDescription: "Output ID template for the export",
+				MarkdownDescription: "BigQuery table name for the export. Table names must be alphanumeric (plus underscores) and must be at most 1024 characters long.",
 				Required:            true,
 			},
 			"dataset_id": schema.StringAttribute{
-				MarkdownDescription: "BigQuery dataset ID",
+				MarkdownDescription: "BigQuery dataset ID. Dataset IDs must be alphanumeric (plus underscores) and must be at most 1024 characters long.",
 				Required:            true,
 			},
 			"project_id": schema.StringAttribute{
 				MarkdownDescription: "BigQuery project ID",
 				Required:            true,
+			},
+			"credential_id": schema.StringAttribute{
+				MarkdownDescription: "The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account.",
+				Optional:            true,
 			},
 		},
 	}, "BigQuery export")
@@ -286,6 +295,12 @@ func getBigqueryExport(ctx context.Context, config *common.FunnelProviderModel, 
 		return nil, err
 	}
 
+	if respObj.CredentialRef != "" {
+		export.Destination.CredentialId = types.StringValue(respObj.CredentialRef)
+	} else {
+		export.Destination.CredentialId = types.StringNull()
+	}
+
 	return &export, nil
 }
 
@@ -328,6 +343,11 @@ func prepareBigqueryExportData(data *FunnelBigqueryJSON, model BigqueryResourceM
 		Range:  data.Range,
 		Where:  mapped_filters,
 	}
+	if credentialId := model.Destination.CredentialId.ValueString(); credentialId != "" {
+		data.CredentialRef = credentialId
+		data.CredentialType = "connection"
+	}
+
 	data.Format.Headers = "safename"
 	if data.Format.Type == "parquet" {
 		data.Format.Type = "raw"

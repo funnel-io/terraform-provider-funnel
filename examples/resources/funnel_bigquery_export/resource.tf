@@ -30,6 +30,8 @@ resource "funnel_bigquery_export" "basic" {
     project_id         = "my-gcp-project"
     dataset_id         = "funnel_marketing_data"
     output_id_template = "daily_export_{date}"
+    # If you don't provide a "credential_id" a Funnel service account will be used.
+    credential_id = var.bigquery_credential_id
   }
 
   fields = [

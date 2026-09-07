@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.4] - Unreleased
 
+### Added
+
+- Add the ability to provide a `credential_id` to `funnel_bigquery_export`.
+
+### Changed
+
 - Updated Go to 1.27.0 and bumped all dependencies.
 
 ## [0.2.3] - 2026-08-31

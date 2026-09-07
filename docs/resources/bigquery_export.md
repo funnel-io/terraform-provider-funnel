@@ -45,6 +45,8 @@ resource "funnel_bigquery_export" "basic" {
     project_id         = "my-gcp-project"
     dataset_id         = "funnel_marketing_data"
     output_id_template = "daily_export_{date}"
+    # If you don't provide a "credential_id" a Funnel service account will be used.
+    credential_id = var.bigquery_credential_id
   }
 
   fields = [
@@ -107,9 +109,13 @@ resource "funnel_bigquery_export" "basic" {
 
 Required:
 
-- `dataset_id` (String) BigQuery dataset ID
-- `output_id_template` (String) Output ID template for the export
+- `dataset_id` (String) BigQuery dataset ID. Dataset IDs must be alphanumeric (plus underscores) and must be at most 1024 characters long.
+- `output_id_template` (String) BigQuery table name for the export. Table names must be alphanumeric (plus underscores) and must be at most 1024 characters long.
 - `project_id` (String) BigQuery project ID
+
+Optional:
+
+- `credential_id` (String) The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account.
 
 
 <a id="nestedatt--fields"></a>

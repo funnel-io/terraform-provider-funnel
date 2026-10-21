@@ -163,6 +163,11 @@ func (r *MeasurementResource) Read(ctx context.Context, req resource.ReadRequest
 
 	export.Id = data.Id
 	export.Workspace = data.Workspace
+	export.Notes = common.NormalizeEmptyString(export.Notes, data.Notes)
+	export.Currency = common.NormalizeEmptyString(export.Currency, data.Currency)
+	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, data.Range.Start)
+	export.Range.End = common.NormalizeEmptyString(export.Range.End, data.Range.End)
+	export.Filters = common.NormalizeFilters(export.Filters, data.Filters)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &export)...)
 }
 
@@ -210,6 +215,11 @@ func (r *MeasurementResource) ImportState(ctx context.Context, req resource.Impo
 
 	export.Id = types.StringValue(exportID)
 	export.Workspace = types.StringValue(workspaceID)
+	export.Notes = common.NormalizeEmptyString(export.Notes, types.StringNull())
+	export.Currency = common.NormalizeEmptyString(export.Currency, types.StringNull())
+	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, types.StringNull())
+	export.Range.End = common.NormalizeEmptyString(export.Range.End, types.StringNull())
+	export.Filters = common.NormalizeFilters(export.Filters, nil)
 	resp.Diagnostics.Append(resp.State.Set(ctx, export)...)
 }
 

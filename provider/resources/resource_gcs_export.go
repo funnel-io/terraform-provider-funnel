@@ -177,6 +177,11 @@ func (r *GCSResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	// Merge API response with state - preserve ID and workspace, prefer API values for everything else
 	export.Id = data.Id
 	export.Workspace = data.Workspace
+	export.Notes = common.NormalizeEmptyString(export.Notes, data.Notes)
+	export.Currency = common.NormalizeEmptyString(export.Currency, data.Currency)
+	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, data.Range.Start)
+	export.Range.End = common.NormalizeEmptyString(export.Range.End, data.Range.End)
+	export.Filters = common.NormalizeFilters(export.Filters, data.Filters)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &export)...)
@@ -263,6 +268,11 @@ func (r *GCSResource) ImportState(ctx context.Context, req resource.ImportStateR
 
 	export.Id = types.StringValue(exportID)
 	export.Workspace = types.StringValue(workspaceID)
+	export.Notes = common.NormalizeEmptyString(export.Notes, types.StringNull())
+	export.Currency = common.NormalizeEmptyString(export.Currency, types.StringNull())
+	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, types.StringNull())
+	export.Range.End = common.NormalizeEmptyString(export.Range.End, types.StringNull())
+	export.Filters = common.NormalizeFilters(export.Filters, nil)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, export)...)
 }

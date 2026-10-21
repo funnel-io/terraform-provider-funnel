@@ -3,12 +3,15 @@
 page_title: "funnel_snowflake_export Resource - funnel"
 subcategory: ""
 description: |-
-  Snowflake export. For authentication we recommend using Snowflake Personal Access Token (PAT) instead of a private key.
+  Exports data from a Funnel workspace to a table in Snowflake on a schedule.
+  Authentication is handled through a Funnel credential referenced by credential_id. The credential ID can be found on the My Credentials page in Funnel. The credential can be either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential.
 ---
 
 # funnel_snowflake_export (Resource)
 
-Snowflake export. For authentication we recommend using Snowflake Personal Access Token (PAT) instead of a private key.
+Exports data from a Funnel workspace to a table in Snowflake on a schedule.
+
+Authentication is handled through a Funnel credential referenced by `credential_id`. The credential ID can be found on the **My Credentials** page in Funnel. The credential can be either a **Snowflake upload (PAT)** or a **Snowflake upload (Private Key)** credential.
 
 ## Example Usage
 
@@ -42,12 +45,12 @@ resource "funnel_snowflake_export" "basic" {
   schedule  = "0 4 * * *" # Daily at 4 AM
 
   destination = {
-    account_locator       = "xy12345.us-east-1"
-    database              = "MARKETING_DB"
-    schema_name           = "FUNNEL_DATA"
-    table_name            = "DAILY_PERFORMANCE"
-    username              = "funnel_user"
-    personal_access_token = var.snowflake_pat
+    account_locator = "xy12345.us-east-1"
+    database        = "MARKETING_DB"
+    schema_name     = "FUNNEL_DATA"
+    table_name      = "DAILY_PERFORMANCE"
+    username        = "funnel_user"
+    credential_id   = var.snowflake_credential_id
   }
 
   fields = [
@@ -110,16 +113,15 @@ resource "funnel_snowflake_export" "basic" {
 
 Required:
 
-- `account_locator` (String) Account Locator or Organisation Name and Account Name separated by a period
+- `account_locator` (String) Snowflake Account Identifier. Account Locator or Organisation Name and Account Name separated by a dash (e.g. `funnel-snowflake`).
+- `credential_id` (String) The ID of the Funnel credential used to authenticate with Snowflake, found on the My Credentials page in Funnel. Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must have been shared with the System user in Funnel before it can be used here.
 - `database` (String) Database name to export data to
 - `schema_name` (String) Schema name to export data to
 - `table_name` (String) Table name to export data to
-- `username` (String) User name to export data to
 
 Optional:
 
-- `personal_access_token` (String, Sensitive) Snowflake Personal Access Token (PAT)
-- `private_key` (String, Sensitive) Snowflake private key. We recommend using Snowflake Personal Access Token (PAT) instead of a private key.
+- `username` (String) User name to export data to
 
 
 <a id="nestedatt--fields"></a>

@@ -25,13 +25,12 @@ type SnowflakeResource struct {
 }
 
 type ExportSnowflakeDestination struct {
-	AccountLocator      types.String `tfsdk:"account_locator"`
-	TableName           types.String `tfsdk:"table_name"`
-	Database            types.String `tfsdk:"database"`
-	SchemaName          types.String `tfsdk:"schema_name"`
-	Username            types.String `tfsdk:"username"`
-	PersonalAccessToken types.String `tfsdk:"personal_access_token"`
-	PrivateKey          types.String `tfsdk:"private_key"`
+	AccountLocator types.String `tfsdk:"account_locator"`
+	TableName      types.String `tfsdk:"table_name"`
+	Database       types.String `tfsdk:"database"`
+	SchemaName     types.String `tfsdk:"schema_name"`
+	Username       types.String `tfsdk:"username"`
+	CredentialId   types.String `tfsdk:"credential_id"`
 }
 
 type SnowflakeResourceModel struct {
@@ -40,19 +39,21 @@ type SnowflakeResourceModel struct {
 }
 
 type FunnelSnowflakeDestinationJSON struct {
-	Type                string `json:"type"`
-	AccountLocator      string `json:"accountLocator"`
-	TableName           string `json:"tableName"`
-	Database            string `json:"database"`
-	SchemaName          string `json:"schemaName"`
-	Username            string `json:"username"`
-	PersonalAccessToken string `json:"password"`
-	PrivateKey          string `json:"privateKey"`
-	Version             string `json:"version"`
+	Type           string `json:"type"`
+	AccountLocator string `json:"accountLocator"`
+	TableName      string `json:"tableName"`
+	Database       string `json:"database"`
+	SchemaName     string `json:"schemaName"`
+	Username       string `json:"username,omitempty"`
+	Version        string `json:"version"`
 }
 
+// CredentialRef/CredentialType live on the root of the export in Funnel, but are
+// configured as part of the destination in Terraform.
 type FunnelSnowflakeJSON struct {
-	Destination FunnelSnowflakeDestinationJSON `json:"destination"`
+	Destination    FunnelSnowflakeDestinationJSON `json:"destination"`
+	CredentialRef  string                         `json:"credentialRef,omitempty"`
+	CredentialType string                         `json:"credentialType,omitempty"`
 	common.ExportSharedJSON
 }
 
@@ -61,14 +62,17 @@ func (r *SnowflakeResource) Metadata(ctx context.Context, req resource.MetadataR
 }
 
 func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	type_description := "Snowflake export. For authentication we recommend using Snowflake Personal Access Token (PAT) instead of a private key."
+	type_description := "Exports data from a Funnel workspace to a table in Snowflake on a schedule." + "\n\n" +
+		"Authentication is handled through a Funnel credential referenced by `credential_id`. " +
+		"The credential ID can be found on the **My Credentials** page in Funnel. " +
+		"The credential can be either a **Snowflake upload (PAT)** or a **Snowflake upload (Private Key)** credential."
 
 	resp.Schema = common.GetExportSchema(schema.SingleNestedAttribute{
 		MarkdownDescription: "Snowflake destination table",
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"account_locator": schema.StringAttribute{
-				MarkdownDescription: "Account Locator or Organisation Name and Account Name separated by a period",
+				MarkdownDescription: "Snowflake Account Identifier. Account Locator or Organisation Name and Account Name separated by a dash (e.g. `funnel-snowflake`).",
 				Required:            true,
 			},
 			"table_name": schema.StringAttribute{
@@ -85,17 +89,11 @@ func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaReque
 			},
 			"username": schema.StringAttribute{
 				MarkdownDescription: "User name to export data to",
+				Optional:            true,
+			},
+			"credential_id": schema.StringAttribute{
+				MarkdownDescription: "The ID of the Funnel credential used to authenticate with Snowflake, found on the My Credentials page in Funnel. Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must have been shared with the System user in Funnel before it can be used here.",
 				Required:            true,
-			},
-			"personal_access_token": schema.StringAttribute{
-				MarkdownDescription: "Snowflake Personal Access Token (PAT)",
-				Optional:            true,
-				Sensitive:           true,
-			},
-			"private_key": schema.StringAttribute{
-				MarkdownDescription: "Snowflake private key. We recommend using Snowflake Personal Access Token (PAT) instead of a private key.",
-				Optional:            true,
-				Sensitive:           true,
 			},
 		},
 	}, type_description)
@@ -314,6 +312,16 @@ func getSnowflakeExport(ctx context.Context, config *common.FunnelProviderModel,
 		return nil, err
 	}
 
+	if respObj.Destination.Username == "" {
+		export.Destination.Username = types.StringNull()
+	}
+
+	if respObj.CredentialRef != "" {
+		export.Destination.CredentialId = types.StringValue(respObj.CredentialRef)
+	} else {
+		export.Destination.CredentialId = types.StringNull()
+	}
+
 	return &export, nil
 }
 
@@ -356,6 +364,9 @@ func prepareSnowflakeExportData(data *FunnelSnowflakeJSON, model SnowflakeResour
 		Range:  data.Range,
 		Where:  mapped_filters,
 	}
+	data.CredentialRef = model.Destination.CredentialId.ValueString()
+	data.CredentialType = "connection"
+
 	data.Format.Headers = "safename"
 	if data.Format.Type == "parquet" {
 		data.Format.Type = "raw"

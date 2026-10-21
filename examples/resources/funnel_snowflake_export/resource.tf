@@ -27,12 +27,12 @@ resource "funnel_snowflake_export" "basic" {
   schedule  = "0 4 * * *" # Daily at 4 AM
 
   destination = {
-    account_locator       = "xy12345.us-east-1"
-    database              = "MARKETING_DB"
-    schema_name           = "FUNNEL_DATA"
-    table_name            = "DAILY_PERFORMANCE"
-    username              = "funnel_user"
-    personal_access_token = var.snowflake_pat
+    account_locator = "xy12345.us-east-1"
+    database        = "MARKETING_DB"
+    schema_name     = "FUNNEL_DATA"
+    table_name      = "DAILY_PERFORMANCE"
+    username        = "funnel_user"
+    credential_id   = var.snowflake_credential_id
   }
 
   fields = [

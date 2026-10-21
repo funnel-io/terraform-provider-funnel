@@ -3,6 +3,7 @@
 page_title: "funnel_measurement_export Resource - funnel"
 subcategory: ""
 description: |-
+  Deprecated: This resource is deprecated and will be removed in a future release.
   Internal Measurement destination only to be used by Funnel Measurement Consultants.
   This export type writes measurement data to a Funnel-managed table.
   Use table_name to identify the target table.
@@ -10,6 +11,8 @@ description: |-
 ---
 
 # funnel_measurement_export (Resource)
+
+**Deprecated:** This resource is deprecated and will be removed in a future release.
 
 **Internal Measurement destination only to be used by Funnel Measurement Consultants**.
 This export type writes measurement data to a Funnel-managed table. 

@@ -10,10 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add the ability to provide a `credential_id` to `funnel_bigquery_export`.
+- Add `credential_id` to `funnel_snowflake_export`. It is required and replaces `personal_access_token` and `private_key`.
 
 ### Changed
 
 - Updated Go to 1.27.0 and bumped all dependencies.
+- `username` is now optional in `funnel_snowflake_export`.
+
+### Deprecated
+
+- `funnel_measurement_export` (Iceberg export) is deprecated and will be removed in a future release.
+
+### Removed
+
+- **Breaking:** `personal_access_token` and `private_key` have been removed from `funnel_snowflake_export`. Use `credential_id` instead.
 
 ## [0.2.3] - 2026-08-31
 

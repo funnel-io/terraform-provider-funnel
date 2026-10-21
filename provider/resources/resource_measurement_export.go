@@ -60,7 +60,8 @@ func (r *MeasurementResource) Metadata(ctx context.Context, req resource.Metadat
 }
 
 func (r *MeasurementResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	type_description := "**Internal Measurement destination only to be used by Funnel Measurement Consultants**." + "\n" +
+	type_description := "**Deprecated:** This resource is deprecated and will be removed in a future release." + "\n\n" +
+		"**Internal Measurement destination only to be used by Funnel Measurement Consultants**." + "\n" +
 		"This export type writes measurement data to a Funnel-managed table. " + "\n" +
 		"Use `table_name` to identify the target table." + "\n" +
 		"Snapshot-related attributes (`snapshot_table_id`, `snapshot_source_id`, `snapshot_source_type`) are optional. To create a snapshot, all snapshot properties have to be set."
@@ -90,6 +91,7 @@ func (r *MeasurementResource) Schema(ctx context.Context, req resource.SchemaReq
 		},
 		type_description,
 	)
+	resp.Schema.DeprecationMessage = "funnel_measurement_export is deprecated and will be removed in a future release."
 }
 
 func (r *MeasurementResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {

@@ -352,10 +352,37 @@ func NormalizeEmptyString(notes types.String, prior types.String) types.String {
 }
 
 // Exports without filters are read back as an empty list, which would otherwise diff against a null config.
-// Keeps [] only if the prior state explicitly held [].
+// Keeps [] only if the prior state explicitly held []. Nested "or", "operation" and "value" are normalized the same way,
+// matched to the prior state by index.
 func NormalizeFilters(filters []ExportFilter, prior []ExportFilter) []ExportFilter {
 	if len(filters) == 0 && (prior == nil || len(prior) > 0) {
 		return nil
 	}
+	for i := range filters {
+		var p ExportFilter
+		if i < len(prior) {
+			p = prior[i]
+		}
+		filters[i].Operation = NormalizeEmptyString(filters[i].Operation, p.Operation)
+		filters[i].Value = NormalizeEmptyString(filters[i].Value, p.Value)
+		if len(filters[i].Or) == 0 && (p.Or == nil || len(p.Or) > 0) {
+			filters[i].Or = nil
+		}
+	}
 	return filters
+}
+
+// Optional field attributes omitted by the Exports API are read back as "", which would otherwise diff against a null config.
+// Matched to the prior state by index.
+func NormalizeFields(fields []ExportField, prior []ExportField) []ExportField {
+	for i := range fields {
+		var p ExportField
+		if i < len(prior) {
+			p = prior[i]
+		}
+		fields[i].Type = NormalizeEmptyString(fields[i].Type, p.Type)
+		fields[i].ExportName = NormalizeEmptyString(fields[i].ExportName, p.ExportName)
+		fields[i].ExportType = NormalizeEmptyString(fields[i].ExportType, p.ExportType)
+	}
+	return fields
 }

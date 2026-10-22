@@ -52,3 +52,45 @@ func TestNormalizeFilters(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeFiltersNested(t *testing.T) {
+	read := func() []ExportFilter {
+		return []ExportFilter{{
+			FieldId:   types.StringValue("f"),
+			Operation: types.StringValue(""),
+			Value:     types.StringValue(""),
+			Or: []struct {
+				Operation types.String `tfsdk:"operation"`
+				Value     types.String `tfsdk:"value"`
+			}{},
+		}}
+	}
+
+	got := NormalizeFilters(read(), []ExportFilter{{FieldId: types.StringValue("f")}})
+	if got[0].Or != nil || !got[0].Operation.IsNull() || !got[0].Value.IsNull() {
+		t.Errorf("expected nested empties to be null, got %+v", got[0])
+	}
+
+	prior := read()
+	got = NormalizeFilters(read(), prior)
+	if got[0].Or == nil || got[0].Operation.IsNull() || got[0].Value.IsNull() {
+		t.Errorf("expected explicit empties in prior to be kept, got %+v", got[0])
+	}
+}
+
+func TestNormalizeFields(t *testing.T) {
+	read := []ExportField{{
+		Id:         types.StringValue("date"),
+		Type:       types.StringValue("dimension"),
+		ExportName: types.StringValue(""),
+		ExportType: types.StringValue(""),
+	}}
+
+	got := NormalizeFields(read, nil)
+	if !got[0].ExportName.IsNull() || !got[0].ExportType.IsNull() {
+		t.Errorf("expected empty export_name/export_type to be null, got %+v", got[0])
+	}
+	if !got[0].Id.Equal(types.StringValue("date")) || !got[0].Type.Equal(types.StringValue("dimension")) {
+		t.Errorf("expected id/type to be kept, got %+v", got[0])
+	}
+}

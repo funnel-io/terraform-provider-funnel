@@ -193,6 +193,7 @@ func (r *GCSResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, data.Range.Start)
 	export.Range.End = common.NormalizeEmptyString(export.Range.End, data.Range.End)
 	export.Filters = common.NormalizeFilters(export.Filters, data.Filters)
+	export.Fields = common.NormalizeFields(export.Fields, data.Fields)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &export)...)
@@ -284,6 +285,7 @@ func (r *GCSResource) ImportState(ctx context.Context, req resource.ImportStateR
 	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, types.StringNull())
 	export.Range.End = common.NormalizeEmptyString(export.Range.End, types.StringNull())
 	export.Filters = common.NormalizeFilters(export.Filters, nil)
+	export.Fields = common.NormalizeFields(export.Fields, nil)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, export)...)
 }

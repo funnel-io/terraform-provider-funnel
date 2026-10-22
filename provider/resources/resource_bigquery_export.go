@@ -7,8 +7,10 @@ import (
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -63,20 +65,32 @@ func (r *BigqueryResource) Schema(ctx context.Context, req resource.SchemaReques
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"output_id_template": schema.StringAttribute{
-				MarkdownDescription: "BigQuery table name for the export. Table names must be alphanumeric (plus underscores) and must be at most 1024 characters long.",
+				MarkdownDescription: "BigQuery table name for the export. May contain letters, digits, underscores and placeholders such as `{date}`.",
 				Required:            true,
+				Validators: []validator.String{
+					common.BigqueryTableTemplateValidator(),
+				},
 			},
 			"dataset_id": schema.StringAttribute{
-				MarkdownDescription: "BigQuery dataset ID. Dataset IDs must be alphanumeric (plus underscores) and must be at most 1024 characters long.",
+				MarkdownDescription: "BigQuery dataset ID. Must be 1-1024 characters and contain only letters, digits and underscores.",
 				Required:            true,
+				Validators: []validator.String{
+					common.BigqueryDatasetIdValidator(),
+				},
 			},
 			"project_id": schema.StringAttribute{
-				MarkdownDescription: "BigQuery project ID",
+				MarkdownDescription: "BigQuery project ID. Must be 6-30 lowercase letters, digits or hyphens, start with a letter and not end with a hyphen. Legacy domain-scoped IDs such as `example.com:my-project` are also accepted.",
 				Required:            true,
+				Validators: []validator.String{
+					common.BigqueryProjectIdValidator(),
+				},
 			},
 			"credential_id": schema.StringAttribute{
-				MarkdownDescription: "The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account.",
+				MarkdownDescription: "The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account. Must not be empty if set.",
 				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 		},
 	}, "BigQuery export")

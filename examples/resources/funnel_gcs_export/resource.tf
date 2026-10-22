@@ -24,7 +24,7 @@ resource "funnel_gcs_export" "basic" {
   workspace = var.workspace_id
   name      = "Daily Marketing Data to GCS"
   enabled   = true
-  schedule  = "0 2 * * *" # Daily at 2 AM
+  schedule  = "CRON_TZ=UTC 0 2 * * *" # Daily at 2 AM (UTC)
 
   destination = {
     bucket             = "my-funnel-exports"

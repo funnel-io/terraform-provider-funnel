@@ -24,7 +24,7 @@ resource "funnel_snowflake_export" "basic" {
   workspace = var.workspace_id
   name      = "Daily Marketing Data to Snowflake"
   enabled   = true
-  schedule  = "0 4 * * *" # Daily at 4 AM
+  schedule  = "CRON_TZ=UTC 0 4 * * *" # Daily at 4 AM (UTC)
 
   destination = {
     account_locator = "xy12345.us-east-1"

@@ -149,20 +149,29 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 				},
 			},
 			"workspace": schema.StringAttribute{
-				MarkdownDescription: "Funnel workspace ID",
+				MarkdownDescription: "Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).",
 				Required:            true,
+				Validators: []validator.String{
+					WorkspaceIdValidator(),
+				},
 			},
 			"schedule": schema.StringAttribute{
-				MarkdownDescription: "Export schedule (e.g., cron expression)",
+				MarkdownDescription: "Export schedule as a cron expression, optionally prefixed with `CRON_TZ=<IANA time zone>`. For example, `CRON_TZ=Europe/Stockholm 10 8 * * *` runs daily at 8:10 am (Europe/Stockholm). Must not be empty.",
 				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"notes": schema.StringAttribute{
 				MarkdownDescription: "Export notes that can be seen in the Funnel app",
 				Optional:            true,
 			},
 			"currency": schema.StringAttribute{
-				MarkdownDescription: "Export currency, e.g., USD, EUR (ISO 4217). If not set, the workspace default currency is used",
+				MarkdownDescription: "Export currency as an uppercase ISO 4217 code, e.g. `USD` or `EUR`. If not set, the workspace default currency is used.",
 				Optional:            true,
+				Validators: []validator.String{
+					CurrencyValidator(),
+				},
 			},
 			"fields": schema.ListNestedAttribute{
 				MarkdownDescription: "Export fields as a list of fields from export_field data source",
@@ -268,8 +277,11 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 								},
 							},
 							"period": schema.StringAttribute{
-								MarkdownDescription: "Unit for the relative time range (day, week, month, quarter, year).",
+								MarkdownDescription: "Unit for the relative time range. One of: `day`, `week`, `month`, `quarter`, or `year`.",
 								Required:            true,
+								Validators: []validator.String{
+									PeriodValidator(),
+								},
 							},
 						},
 					},
@@ -283,8 +295,11 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 								Required:            true,
 							},
 							"period": schema.StringAttribute{
-								MarkdownDescription: "Unit for the relative time range (day, week, month, quarter, year).",
+								MarkdownDescription: "Unit for the relative time range. One of: `day`, `week`, `month`, `quarter`, or `year`.",
 								Required:            true,
+								Validators: []validator.String{
+									PeriodValidator(),
+								},
 							},
 						},
 					},
@@ -312,8 +327,11 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 			},
 			"destination": destination,
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Export name",
+				MarkdownDescription: "Export name. Must not be empty.",
 				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"enabled": schema.BoolAttribute{
 				MarkdownDescription: "Whether the export is enabled",

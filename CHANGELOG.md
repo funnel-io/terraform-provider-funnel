@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.5] - Unreleased
 
+### Added
+
+- Plan-time validation for export attributes, so invalid values fail at `terraform plan` instead of at the API.
+
+### Changed
+
+- Attribute documentation now describes the allowed values. Examples use `CRON_TZ=` schedules, and the filter example in the provider docs explains how multiple filters combine.
+
 ### Fixed
 
 - Exports no longer show a perpetual diff when `notes`, `currency`, `filters`, `range.start` or `range.end` are not set. Existing state may need one `terraform apply` to settle.

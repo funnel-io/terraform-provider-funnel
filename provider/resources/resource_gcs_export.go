@@ -7,8 +7,10 @@ import (
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -66,16 +68,25 @@ func (r *GCSResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"output_id_template": schema.StringAttribute{
-				MarkdownDescription: "Output ID template for the export",
+				MarkdownDescription: "Output ID template for the export. Must not be empty.",
 				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"path": schema.StringAttribute{
-				MarkdownDescription: "Path for the export",
+				MarkdownDescription: "Path for the export. Must be 1-1024 characters.",
 				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 1024),
+				},
 			},
 			"bucket": schema.StringAttribute{
-				MarkdownDescription: "GCS bucket for the export",
+				MarkdownDescription: "GCS bucket for the export. Must be 3-222 characters, contain only lowercase letters, digits, `.`, `-` and `_`, and start and end with a letter or digit.",
 				Required:            true,
+				Validators: []validator.String{
+					common.GcsBucketValidator(),
+				},
 			},
 			"gzip": schema.BoolAttribute{
 				MarkdownDescription: "Whether to gzip the exported files",

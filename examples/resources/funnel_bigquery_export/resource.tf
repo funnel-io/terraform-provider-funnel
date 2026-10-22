@@ -24,7 +24,7 @@ resource "funnel_bigquery_export" "basic" {
   workspace = var.workspace_id
   name      = "Daily Marketing Data to BigQuery"
   enabled   = true
-  schedule  = "0 3 * * *" # Daily at 3 AM
+  schedule  = "CRON_TZ=UTC 0 3 * * *" # Daily at 3 AM (UTC)
 
   destination = {
     project_id         = "my-gcp-project"

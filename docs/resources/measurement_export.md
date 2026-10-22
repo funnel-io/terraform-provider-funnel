@@ -49,7 +49,7 @@ resource "funnel_measurement_export" "basic" {
   workspace = var.workspace_id
   name      = "Daily Measurement Data"
   enabled   = true
-  schedule  = "0 5 * * *" # Daily at 5 AM
+  schedule  = "CRON_TZ=UTC 0 5 * * *" # Daily at 5 AM (UTC)
 
   destination = {
     table_name = "measurement_daily_performance"
@@ -88,15 +88,15 @@ resource "funnel_measurement_export" "basic" {
 - `destination` (Attributes) Export destination object (see [below for nested schema](#nestedatt--destination))
 - `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
 - `format` (Attributes) Export format (see [below for nested schema](#nestedatt--format))
-- `name` (String) Export name
+- `name` (String) Export name. Must not be empty.
 - `partition_schema` (Attributes) Partition schema for the export. **Recommended:** Use `by = "date"` and `per = "month"`. (see [below for nested schema](#nestedatt--partition_schema))
 - `range` (Attributes) Export range (see [below for nested schema](#nestedatt--range))
-- `schedule` (String) Export schedule (e.g., cron expression)
-- `workspace` (String) Funnel workspace ID
+- `schedule` (String) Export schedule as a cron expression, optionally prefixed with `CRON_TZ=<IANA time zone>`. For example, `CRON_TZ=Europe/Stockholm 10 8 * * *` runs daily at 8:10 am (Europe/Stockholm). Must not be empty.
+- `workspace` (String) Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).
 
 ### Optional
 
-- `currency` (String) Export currency, e.g., USD, EUR (ISO 4217). If not set, the workspace default currency is used
+- `currency` (String) Export currency as an uppercase ISO 4217 code, e.g. `USD` or `EUR`. If not set, the workspace default currency is used.
 - `enabled` (Boolean) Whether the export is enabled
 - `filters` (Attributes List) Export filters (see [below for nested schema](#nestedatt--filters))
 - `notes` (String) Export notes that can be seen in the Funnel app
@@ -163,7 +163,7 @@ Optional:
 
 Required:
 
-- `period` (String) Unit for the relative time range (day, week, month, quarter, year).
+- `period` (String) Unit for the relative time range. One of: `day`, `week`, `month`, `quarter`, or `year`.
 - `periods` (Number) Number of periods for the relative time range, negative value means past. For example periods=-7 and period=day means last 7 days.
 
 
@@ -172,7 +172,7 @@ Required:
 
 Required:
 
-- `period` (String) Unit for the relative time range (day, week, month, quarter, year).
+- `period` (String) Unit for the relative time range. One of: `day`, `week`, `month`, `quarter`, or `year`.
 - `periods` (Number) Number of periods for the relative time range. Only positive values are allowed.
 
 

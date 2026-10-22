@@ -7,8 +7,10 @@ import (
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -72,20 +74,32 @@ func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaReque
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"account_locator": schema.StringAttribute{
-				MarkdownDescription: "Snowflake Account Identifier. Account Locator or Organisation Name and Account Name separated by a dash (e.g. `funnel-snowflake`).",
+				MarkdownDescription: "Snowflake Account Identifier. Account Locator or Organisation Name and Account Name separated by a dash (e.g. `funnel-snowflake`). May contain letters, digits, `.`, `-` and `_`, and must start with a letter or digit.",
 				Required:            true,
+				Validators: []validator.String{
+					common.SnowflakeAccountValidator(),
+				},
 			},
 			"table_name": schema.StringAttribute{
-				MarkdownDescription: "Table name to export data to",
+				MarkdownDescription: "Table name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).",
 				Required:            true,
+				Validators: []validator.String{
+					common.SnowflakeIdentifierValidator(),
+				},
 			},
 			"database": schema.StringAttribute{
-				MarkdownDescription: "Database name to export data to",
+				MarkdownDescription: "Database name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).",
 				Required:            true,
+				Validators: []validator.String{
+					common.SnowflakeIdentifierValidator(),
+				},
 			},
 			"schema_name": schema.StringAttribute{
-				MarkdownDescription: "Schema name to export data to",
+				MarkdownDescription: "Schema name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).",
 				Required:            true,
+				Validators: []validator.String{
+					common.SnowflakeIdentifierValidator(),
+				},
 			},
 			"username": schema.StringAttribute{
 				MarkdownDescription: "User name to export data to",
@@ -94,6 +108,9 @@ func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaReque
 			"credential_id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the Funnel credential used to authenticate with Snowflake, found on the My Credentials page in Funnel. Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must have been shared with the System user in Funnel before it can be used here.",
 				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 		},
 	}, type_description)

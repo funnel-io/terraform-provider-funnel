@@ -39,7 +39,7 @@ resource "funnel_bigquery_export" "basic" {
   workspace = var.workspace_id
   name      = "Daily Marketing Data to BigQuery"
   enabled   = true
-  schedule  = "0 3 * * *" # Daily at 3 AM
+  schedule  = "CRON_TZ=UTC 0 3 * * *" # Daily at 3 AM (UTC)
 
   destination = {
     project_id         = "my-gcp-project"
@@ -87,15 +87,15 @@ resource "funnel_bigquery_export" "basic" {
 - `destination` (Attributes) Bigquery destination table (see [below for nested schema](#nestedatt--destination))
 - `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
 - `format` (Attributes) Export format (see [below for nested schema](#nestedatt--format))
-- `name` (String) Export name
+- `name` (String) Export name. Must not be empty.
 - `partition_schema` (Attributes) Partition schema for the export. **Recommended:** Use `by = "date"` and `per = "month"`. (see [below for nested schema](#nestedatt--partition_schema))
 - `range` (Attributes) Export range (see [below for nested schema](#nestedatt--range))
-- `schedule` (String) Export schedule (e.g., cron expression)
-- `workspace` (String) Funnel workspace ID
+- `schedule` (String) Export schedule as a cron expression, optionally prefixed with `CRON_TZ=<IANA time zone>`. For example, `CRON_TZ=Europe/Stockholm 10 8 * * *` runs daily at 8:10 am (Europe/Stockholm). Must not be empty.
+- `workspace` (String) Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).
 
 ### Optional
 
-- `currency` (String) Export currency, e.g., USD, EUR (ISO 4217). If not set, the workspace default currency is used
+- `currency` (String) Export currency as an uppercase ISO 4217 code, e.g. `USD` or `EUR`. If not set, the workspace default currency is used.
 - `enabled` (Boolean) Whether the export is enabled
 - `filters` (Attributes List) Export filters (see [below for nested schema](#nestedatt--filters))
 - `notes` (String) Export notes that can be seen in the Funnel app
@@ -109,13 +109,13 @@ resource "funnel_bigquery_export" "basic" {
 
 Required:
 
-- `dataset_id` (String) BigQuery dataset ID. Dataset IDs must be alphanumeric (plus underscores) and must be at most 1024 characters long.
-- `output_id_template` (String) BigQuery table name for the export. Table names must be alphanumeric (plus underscores) and must be at most 1024 characters long.
-- `project_id` (String) BigQuery project ID
+- `dataset_id` (String) BigQuery dataset ID. Must be 1-1024 characters and contain only letters, digits and underscores.
+- `output_id_template` (String) BigQuery table name for the export. May contain letters, digits, underscores and placeholders such as `{date}`.
+- `project_id` (String) BigQuery project ID. Must be 6-30 lowercase letters, digits or hyphens, start with a letter and not end with a hyphen. Legacy domain-scoped IDs such as `example.com:my-project` are also accepted.
 
 Optional:
 
-- `credential_id` (String) The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account.
+- `credential_id` (String) The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account. Must not be empty if set.
 
 
 <a id="nestedatt--fields"></a>
@@ -162,7 +162,7 @@ Optional:
 
 Required:
 
-- `period` (String) Unit for the relative time range (day, week, month, quarter, year).
+- `period` (String) Unit for the relative time range. One of: `day`, `week`, `month`, `quarter`, or `year`.
 - `periods` (Number) Number of periods for the relative time range, negative value means past. For example periods=-7 and period=day means last 7 days.
 
 
@@ -171,7 +171,7 @@ Required:
 
 Required:
 
-- `period` (String) Unit for the relative time range (day, week, month, quarter, year).
+- `period` (String) Unit for the relative time range. One of: `day`, `week`, `month`, `quarter`, or `year`.
 - `periods` (Number) Number of periods for the relative time range. Only positive values are allowed.
 
 

@@ -42,7 +42,7 @@ resource "funnel_snowflake_export" "basic" {
   workspace = var.workspace_id
   name      = "Daily Marketing Data to Snowflake"
   enabled   = true
-  schedule  = "0 4 * * *" # Daily at 4 AM
+  schedule  = "CRON_TZ=UTC 0 4 * * *" # Daily at 4 AM (UTC)
 
   destination = {
     account_locator = "xy12345.us-east-1"
@@ -91,15 +91,15 @@ resource "funnel_snowflake_export" "basic" {
 - `destination` (Attributes) Snowflake destination table (see [below for nested schema](#nestedatt--destination))
 - `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
 - `format` (Attributes) Export format (see [below for nested schema](#nestedatt--format))
-- `name` (String) Export name
+- `name` (String) Export name. Must not be empty.
 - `partition_schema` (Attributes) Partition schema for the export. **Recommended:** Use `by = "date"` and `per = "month"`. (see [below for nested schema](#nestedatt--partition_schema))
 - `range` (Attributes) Export range (see [below for nested schema](#nestedatt--range))
-- `schedule` (String) Export schedule (e.g., cron expression)
-- `workspace` (String) Funnel workspace ID
+- `schedule` (String) Export schedule as a cron expression, optionally prefixed with `CRON_TZ=<IANA time zone>`. For example, `CRON_TZ=Europe/Stockholm 10 8 * * *` runs daily at 8:10 am (Europe/Stockholm). Must not be empty.
+- `workspace` (String) Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).
 
 ### Optional
 
-- `currency` (String) Export currency, e.g., USD, EUR (ISO 4217). If not set, the workspace default currency is used
+- `currency` (String) Export currency as an uppercase ISO 4217 code, e.g. `USD` or `EUR`. If not set, the workspace default currency is used.
 - `enabled` (Boolean) Whether the export is enabled
 - `filters` (Attributes List) Export filters (see [below for nested schema](#nestedatt--filters))
 - `notes` (String) Export notes that can be seen in the Funnel app
@@ -113,11 +113,11 @@ resource "funnel_snowflake_export" "basic" {
 
 Required:
 
-- `account_locator` (String) Snowflake Account Identifier. Account Locator or Organisation Name and Account Name separated by a dash (e.g. `funnel-snowflake`).
+- `account_locator` (String) Snowflake Account Identifier. Account Locator or Organisation Name and Account Name separated by a dash (e.g. `funnel-snowflake`). May contain letters, digits, `.`, `-` and `_`, and must start with a letter or digit.
 - `credential_id` (String) The ID of the Funnel credential used to authenticate with Snowflake, found on the My Credentials page in Funnel. Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must have been shared with the System user in Funnel before it can be used here.
-- `database` (String) Database name to export data to
-- `schema_name` (String) Schema name to export data to
-- `table_name` (String) Table name to export data to
+- `database` (String) Database name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
+- `schema_name` (String) Schema name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
+- `table_name` (String) Table name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
 
 Optional:
 
@@ -168,7 +168,7 @@ Optional:
 
 Required:
 
-- `period` (String) Unit for the relative time range (day, week, month, quarter, year).
+- `period` (String) Unit for the relative time range. One of: `day`, `week`, `month`, `quarter`, or `year`.
 - `periods` (Number) Number of periods for the relative time range, negative value means past. For example periods=-7 and period=day means last 7 days.
 
 
@@ -177,7 +177,7 @@ Required:
 
 Required:
 
-- `period` (String) Unit for the relative time range (day, week, month, quarter, year).
+- `period` (String) Unit for the relative time range. One of: `day`, `week`, `month`, `quarter`, or `year`.
 - `periods` (Number) Number of periods for the relative time range. Only positive values are allowed.
 
 

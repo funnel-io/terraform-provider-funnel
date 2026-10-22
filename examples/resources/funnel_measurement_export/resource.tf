@@ -25,7 +25,7 @@ resource "funnel_measurement_export" "basic" {
   workspace = var.workspace_id
   name      = "Daily Measurement Data"
   enabled   = true
-  schedule  = "0 5 * * *" # Daily at 5 AM
+  schedule  = "CRON_TZ=UTC 0 5 * * *" # Daily at 5 AM (UTC)
 
   destination = {
     table_name = "measurement_daily_performance"

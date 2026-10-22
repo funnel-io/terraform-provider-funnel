@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.4] - Unreleased
+## [0.2.5] - Unreleased
+
+### Fixed
+
+- Exports no longer show a perpetual diff when `notes`, `currency`, `filters`, `range.start` or `range.end` are not set. Existing state may need one `terraform apply` to settle.
+
+## [0.2.4] - 2026-10-21
 
 ### Added
 

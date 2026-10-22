@@ -323,3 +323,21 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 		},
 	}
 }
+
+// The Exports API omits empty optional strings (e.g. notes, currency, range start/end), which would otherwise be read back
+// as "" and diff against a null config. Keeps "" only if the prior state explicitly held "".
+func NormalizeEmptyString(notes types.String, prior types.String) types.String {
+	if notes.ValueString() == "" && !prior.Equal(types.StringValue("")) {
+		return types.StringNull()
+	}
+	return notes
+}
+
+// Exports without filters are read back as an empty list, which would otherwise diff against a null config.
+// Keeps [] only if the prior state explicitly held [].
+func NormalizeFilters(filters []ExportFilter, prior []ExportFilter) []ExportFilter {
+	if len(filters) == 0 && (prior == nil || len(prior) > 0) {
+		return nil
+	}
+	return filters
+}

@@ -13,16 +13,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
+
+      - name: Check go.mod is tidy
+        run: go mod tidy -diff
+
+      - name: Vet
+        run: go vet ./...
 
       - name: Build
         run: go build -v ./...
 
       - name: Test
         run: go test -v ./...
+
+      - name: Check docs are up to date
+        run: |
+          cd tools && go generate ./...
+          git diff --exit-code -- ../docs
+          test -z "$(git status --porcelain -- ../docs)"

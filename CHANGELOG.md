@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Exports no longer show a perpetual diff when `notes`, `currency`, `filters`, `range.start` or `range.end` are not set. Existing state may need one `terraform apply` to settle.
+- Exports no longer show a perpetual diff when `notes`, `currency`, `filters`, `filters[].or`, `filters[].operation`, `filters[].value`, `fields[].type`, `fields[].export_name`, `fields[].export_type`, `range.start` or `range.end` are not set. Existing state may need one `terraform apply` to settle.
 
 ## [0.2.4] - 2026-10-21
 

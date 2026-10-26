@@ -57,11 +57,11 @@ func (p *funnelProvider) Schema(_ context.Context, _ provider.SchemaRequest, res
 				Required:            true,
 			},
 			"client_id": schema.StringAttribute{
-				MarkdownDescription: "Auth0 Client ID for Funnel.",
+				MarkdownDescription: "Funnel System user client ID.",
 				Required:            true,
 			},
 			"client_secret": schema.StringAttribute{
-				MarkdownDescription: "Auth0 Client Secret for Funnel.",
+				MarkdownDescription: "Funnel System user client secret.",
 				Required:            true,
 				Sensitive:           true,
 			},

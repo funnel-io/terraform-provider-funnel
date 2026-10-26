@@ -66,8 +66,11 @@ func (r *CustomMetricResource) Schema(ctx context.Context, req resource.SchemaRe
 				},
 			},
 			"workspace": schema.StringAttribute{
-				MarkdownDescription: "Funnel workspace ID",
+				MarkdownDescription: "Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).",
 				Required:            true,
+				Validators: []validator.String{
+					common.WorkspaceIdValidator(),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

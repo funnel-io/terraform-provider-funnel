@@ -1,6 +1,6 @@
 # Look up an existing workspace by ID
 data "funnel_workspace" "existing" {
-  id = "ws_abc123xyz"
+  id = "-Nx4KpQw2RtYbHsLmZaE"
 }
 
 # Output workspace information

@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.5] - Unreleased
+## [0.2.6] - Unreleased
+
+### Added
+
+- Plan-time validation of `workspace` in `funnel_custom_metric` and `funnel_custom_dimension`. It must be exactly 20 characters, the same as for exports and `funnel_data_source`.
+
+### Changed
+
+- Fixed attribute descriptions that were wrong or unclear, such as the export `id`, the custom dimension `description`, `format.type` and the provider's `client_id` and `client_secret`.
+- Fixed examples with invalid or misleading values for the workspace ID, the GA4 `remote_struct`, the Snowflake `account_locator` and the filters.
+
+## [0.2.5] - 2026-10-21
 
 ### Added
 

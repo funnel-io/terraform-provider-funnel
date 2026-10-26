@@ -1,4 +1,4 @@
-# Google analytics data source with remoteStruct contract
+# Google Analytics 4 data source configured with remote_struct
 resource "funnel_data_source" "google_analytics" {
   workspace     = var.workspace_id
   type          = "googleanalytics"
@@ -6,8 +6,8 @@ resource "funnel_data_source" "google_analytics" {
   template_id   = "funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
   credential_id = var.google_analytics_credential_id
   remote_struct = jsonencode({
-    remote_id        = "123-456-7890"
-    remote_parent_id = "098-765-4321"
+    remote_id        = "312456789"
+    remote_parent_id = "98765432"
   })
 
   # Default values
@@ -15,7 +15,7 @@ resource "funnel_data_source" "google_analytics" {
   exclude_data_from_funnel = false
 }
 
-# TikTok Ads data source with remoteId contract
+# TikTok Ads data source configured with remote_id
 resource "funnel_data_source" "tiktok_ads" {
   workspace     = var.workspace_id
   type          = "tiktok"
@@ -25,7 +25,7 @@ resource "funnel_data_source" "tiktok_ads" {
   credential_id = var.tiktok_credential_id
 }
 
-# Spotify Ads data source with authOnly contract (no remote identity)
+# Spotify Ads data source without remote_id or remote_struct
 resource "funnel_data_source" "spotify" {
   workspace     = var.workspace_id
   type          = "spotifyads"

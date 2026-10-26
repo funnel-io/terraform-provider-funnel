@@ -43,10 +43,10 @@ resource "funnel_custom_dimension" "last_updated" {
 
 ### Required
 
-- `description` (String) Custom metric description. Will be displayed in the Funnel UI.
+- `description` (String) Custom dimension description. Will be displayed in the Funnel UI.
 - `name` (String) Custom dimension name
 - `unit` (String) Custom dimension unit type. One of `string`, `date`, or `datetime`.
-- `workspace` (String) Funnel workspace ID
+- `workspace` (String) Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).
 
 ### Read-Only
 

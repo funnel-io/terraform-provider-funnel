@@ -27,7 +27,7 @@ resource "funnel_snowflake_export" "basic" {
   schedule  = "CRON_TZ=UTC 0 4 * * *" # Daily at 4 AM (UTC)
 
   destination = {
-    account_locator = "xy12345.us-east-1"
+    account_locator = "myorg-myaccount"
     database        = "MARKETING_DB"
     schema_name     = "FUNNEL_DATA"
     table_name      = "DAILY_PERFORMANCE"

@@ -11,8 +11,6 @@ The changelog for this provider can be found here: <https://github.com/funnel-io
 
 ## Example Usage
 
-For Terraform v0.13 and later.
-
 ### Creating a Funnel provider
 
 ```terraform
@@ -79,7 +77,7 @@ data "funnel_export_field" "clicks_field" {
 }
 ```
 
-# Filters
+## Filters
 
 Filters are used to filter the data that is exported. They are used in the `filters` block of the export resources.
 Example of an AND filter of three filters on three fields:
@@ -94,14 +92,14 @@ filters = [
           value     = "company_a"
         },
         {
-          operation = "notcontains"
+          operation = "contains"
           value     = "company_b"
       }]
     },
     {
-      field_id  = local.field_date_id
+      field_id  = local.field_clicks_id
       operation = "gt"
-      value     = "2025"
+      value     = "100"
     },
     {
       field_id  = "sourceType"
@@ -113,8 +111,8 @@ filters = [
 
 All entries in `filters` must match for a row to be exported. The example above exports rows where:
 
-1. The Adtriba brand contains `company_a` **or** does not contain `company_b`.
-2. The date is after `2025`.
+1. The Adtriba brand contains `company_a` **or** `company_b`.
+2. Clicks are greater than `100`.
 3. The source type is `adwords` (Google Ads).
 
 ## Potential errors
@@ -139,7 +137,7 @@ If you receive an error like the one below when running `terraform plan` or `ter
 If you receive a `429 Too Many Requests` error when making API calls, it means that you have exceeded the rate limit for the Funnel API.
 If it happens frequently, consider contacting Funnel support to discuss your use case.
 
-##### Import command
+## Import command
 
 The ID format for importing Funnel resources is `<workspace_id>/<resource_id>`.
 
@@ -154,8 +152,8 @@ terraform import funnel_<type>_export.<name> <workspace_id>/<export_id>
 
 ### Required
 
-- `client_id` (String) Auth0 Client ID for Funnel.
-- `client_secret` (String, Sensitive) Auth0 Client Secret for Funnel.
+- `client_id` (String) Funnel System user client ID.
+- `client_secret` (String, Sensitive) Funnel System user client secret.
 - `subscription_id` (String) Funnel subscription ID. E.g. `fsXXXXXXXXXXX`.
 
 ### Optional

@@ -26,14 +26,14 @@ The Funnel provider requires a `subscription_id` to be set in the provider confi
 The URL will look something like this: `https://app.funnel.io/#/subscription/SUBSCRIPTION_ID/overview`.
 
 Funnel workspaces can be managed with the `funnel_workspace` resource.
-If you already have a workspace, you can get the ID from the URL and import it. The URL will look something like this: `https://app.funnel.io/#/account/WORKSPACE_ID/home`.
+If you already have a workspace, get its ID from the URL and import it with `terraform import funnel_workspace.<name> <workspace_id>`. The URL looks something like this: `https://app.funnel.io/workspaces/WORKSPACE_ID`.
 
 Get resource IDs from the Funnel app as well. Above the table listing of resources there is a "Choose column" button where you can add the column "ID" that contains the resource IDs.
-You could also go into the resource you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/#/account/WORKSPACE_ID/RESOURCE_TYPE/RESOURCE_ID`.
+You could also go into the resource you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/workspaces/WORKSPACE_ID/RESOURCE_TYPE/RESOURCE_ID`.
 
 ## Exports
 
-Exports are created with the `funnel_<type>_export` resource. The available types are `bigquery`, `snowflake`, `gcs`, and `measurement`. All the fields outside of the `destination` block are shared with the other export types.
+Exports are created with the `funnel_<type>_export` resource. The available types are `bigquery`, `snowflake`, and `gcs`. All the fields outside of the `destination` block are shared with the other export types.
 
 ## Fields
 
@@ -128,7 +128,7 @@ If it happens frequently, consider contacting Funnel support to discuss your use
 
 ## Import command
 
-The ID format for importing Funnel resources is `<workspace_id>/<resource_id>`.
+Workspaces are imported by `<workspace_id>`. All other resources are imported by `<workspace_id>/<resource_id>`.
 
 Run the following command to import exports into your Terraform state:
 

@@ -49,7 +49,6 @@ resource "funnel_snowflake_export" "basic" {
     database        = "MARKETING_DB"
     schema_name     = "FUNNEL_DATA"
     table_name      = "DAILY_PERFORMANCE"
-    username        = "funnel_user"
     credential_id   = var.snowflake_credential_id
   }
 
@@ -118,10 +117,6 @@ Required:
 - `database` (String) Database name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
 - `schema_name` (String) Schema name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
 - `table_name` (String) Table name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
-
-Optional:
-
-- `username` (String) User name to export data to
 
 
 <a id="nestedatt--fields"></a>
@@ -202,3 +197,13 @@ Required:
 
 - `operation` (String) Filter operation (e.g., equals, contains)
 - `value` (String) Value to filter by
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import funnel_snowflake_export.example <workspace_id>/<export_id>
+```

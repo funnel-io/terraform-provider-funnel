@@ -89,7 +89,7 @@ func fetchToken(clientID, clientSecret, audience, tokenEndpoint string, ctx cont
 		tflog.Error(ctx, "Failed to obtain Auth0 token", map[string]any{"status": resp.Status, "body": string(body)})
 
 		error_message := "Authentication failed. Verify that CLIENT_ID and CLIENT_SECRET are correct (the secret may have been rotated). Check your Terraform System user in the Funnel Subscription overview."
-	 	if resp.StatusCode == http.StatusForbidden {
+		if resp.StatusCode == http.StatusForbidden {
 			error_message = "Authentication failed. Verify that CLIENT_ID belongs to a Terraform System user and that you're targeting the correct environment. Check your Terraform System user in the Funnel Subscription overview."
 		}
 

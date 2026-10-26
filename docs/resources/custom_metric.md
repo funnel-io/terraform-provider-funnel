@@ -73,7 +73,7 @@ resource "funnel_custom_metric" "unique_campaigns" {
 - `description` (String) Custom metric description. Will be displayed in the Funnel UI.
 - `name` (String) Custom metric name
 - `unit` (String) Custom metric unit type. One of `number`, `percent`, `monetary`, or `duration`.
-- `workspace` (String) Funnel workspace ID
+- `workspace` (String) Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).
 
 ### Optional
 

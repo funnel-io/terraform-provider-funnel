@@ -103,7 +103,7 @@ resource "funnel_measurement_export" "basic" {
 
 ### Read-Only
 
-- `id` (String) Example identifier
+- `id` (String) Export identifier.
 
 <a id="nestedatt--destination"></a>
 ### Nested Schema for `destination`
@@ -136,7 +136,7 @@ Optional:
 Required:
 
 - `metrics` (String) Metrics format for the export
-- `type` (String) Format type (Parquet, CSV or TSV)
+- `type` (String) Format type. One of: `parquet`, `csv`, or `tsv`.
 
 
 <a id="nestedatt--partition_schema"></a>

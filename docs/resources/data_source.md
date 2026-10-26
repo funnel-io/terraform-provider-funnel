@@ -34,13 +34,13 @@ Click on the Funnel templates button to see the built in templates. Click on a t
 
 ## Data source remote ids and remote structs
 
-For a full list of the how remote_struct should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).
-Copy the remote ID for your platform into the `remote_id` field for your data source or create a `remote_struct` field that has follows the guide for your platform.
+For how `remote_struct` should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).
+Copy the remote ID for your platform into the `remote_id` field for your data source or create a `remote_struct` field that follows the guide for your platform.
 
 ## Example Usage
 
 ```terraform
-# Google analytics data source with remoteStruct contract
+# Google Analytics 4 data source configured with remote_struct
 resource "funnel_data_source" "google_analytics" {
   workspace     = var.workspace_id
   type          = "googleanalytics"
@@ -48,8 +48,8 @@ resource "funnel_data_source" "google_analytics" {
   template_id   = "funnel:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
   credential_id = var.google_analytics_credential_id
   remote_struct = jsonencode({
-    remote_id        = "123-456-7890"
-    remote_parent_id = "098-765-4321"
+    remote_id        = "312456789"
+    remote_parent_id = "98765432"
   })
 
   # Default values
@@ -57,7 +57,7 @@ resource "funnel_data_source" "google_analytics" {
   exclude_data_from_funnel = false
 }
 
-# TikTok Ads data source with remoteId contract
+# TikTok Ads data source configured with remote_id
 resource "funnel_data_source" "tiktok_ads" {
   workspace     = var.workspace_id
   type          = "tiktok"
@@ -67,7 +67,7 @@ resource "funnel_data_source" "tiktok_ads" {
   credential_id = var.tiktok_credential_id
 }
 
-# Spotify Ads data source with authOnly contract (no remote identity)
+# Spotify Ads data source without remote_id or remote_struct
 resource "funnel_data_source" "spotify" {
   workspace     = var.workspace_id
   type          = "spotifyads"
@@ -93,8 +93,8 @@ resource "funnel_data_source" "tiktok_custom" {
 ### Required
 
 - `name` (String) The display name for this data source as it will appear in the Funnel interface. Should be descriptive and help identify the account or configuration (e.g., "Google Ads - Main Account").
-- `type` (String) The source type identifier. Supported values include: `adwords` (Google Ads), `facebookads` (Facebook Ads), `tiktok` (TikTok Ads), `bing` (Microsoft Ads), `spotifyads` (Spotify Ads), `linkedin_api` (LinkedIn Ads), `instagraminsights` (Instagram Insights), `reddit` (Reddit Ads). Changing this forces a new resource to be created.
-- `workspace` (String) The Funnel workspace ID where this data source will be created. Must be exactly 20 characters.
+- `type` (String) The source type identifier, e.g. `adwords` (Google Ads) or `facebookads` (Facebook Ads). See the [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct) guide for all supported types. Changing this forces a new resource to be created.
+- `workspace` (String) The Funnel workspace ID where this data source will be created. Must be exactly 20 characters (letters, digits, `-` and `_`).
 
 ### Optional
 
@@ -103,7 +103,7 @@ resource "funnel_data_source" "tiktok_custom" {
 - `exclude_data_from_funnel` (Boolean) When set to `true`, excludes data from this source from being included in Funnel aggregations and queries. The data source will still download and store data, but it won't be available for analysis. Could be useful if you want to validate the data before it is used in Funnel. Defaults to `false`.
 - `is_demo` (Boolean) When set to `true`, the data source produces demo (test) data in Funnel instead of connecting to the external platform. Defaults to `false`. Changing this forces a new resource to be created.
 - `remote_id` (String) The identifier of the account or entity in the source system (e.g., Google Ads customer ID, Facebook Ads account ID). Required for most advertising platforms. Changing this forces a new resource to be created.
-- `remote_struct` (String) A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers. Mutually exclusive with `remote_id`. Changing this forces a new resource to be created. For a full list of the how remote_struct should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).
+- `remote_struct` (String) A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers. Mutually exclusive with `remote_id`. Changing this forces a new resource to be created. For how `remote_struct` should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).
 - `template_id` (String) The template ID that defines what data to collect. Built-in templates use the format `funnel:<connector_prefix>-<slug>` (e.g., `funnel:tiktok-my_template_slug`). Custom templates use the format `<connector_prefix>-<hash>` (e.g., `tiktok-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`). Changing this forces a new resource to be created.
 
 ### Read-Only

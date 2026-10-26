@@ -45,7 +45,7 @@ resource "funnel_snowflake_export" "basic" {
   schedule  = "CRON_TZ=UTC 0 4 * * *" # Daily at 4 AM (UTC)
 
   destination = {
-    account_locator = "xy12345.us-east-1"
+    account_locator = "myorg-myaccount"
     database        = "MARKETING_DB"
     schema_name     = "FUNNEL_DATA"
     table_name      = "DAILY_PERFORMANCE"
@@ -106,7 +106,7 @@ resource "funnel_snowflake_export" "basic" {
 
 ### Read-Only
 
-- `id` (String) Example identifier
+- `id` (String) Export identifier.
 
 <a id="nestedatt--destination"></a>
 ### Nested Schema for `destination`
@@ -141,7 +141,7 @@ Optional:
 Required:
 
 - `metrics` (String) Metrics format for the export
-- `type` (String) Format type (Parquet, CSV or TSV)
+- `type` (String) Format type. One of: `parquet`, `csv`, or `tsv`.
 
 
 <a id="nestedatt--partition_schema"></a>

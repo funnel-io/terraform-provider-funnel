@@ -143,7 +143,7 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "Example identifier",
+				MarkdownDescription: "Export identifier.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -238,7 +238,7 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 				Required:            true,
 				Attributes: map[string]schema.Attribute{
 					"type": schema.StringAttribute{
-						MarkdownDescription: "Format type (Parquet, CSV or TSV)",
+						MarkdownDescription: "Format type. One of: `parquet`, `csv`, or `tsv`.",
 						Required:            true,
 						Validators: []validator.String{
 							stringvalidator.OneOf("parquet", "csv", "tsv"),

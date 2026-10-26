@@ -98,13 +98,10 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 		MarkdownDescription: "Manages a Funnel data source, which represents a connection to an advertising platform or analytics system. Data sources pull data from external platforms into Funnel for aggregation and analysis.",
 		Attributes: map[string]schema.Attribute{
 			"workspace": schema.StringAttribute{
-				MarkdownDescription: "The Funnel workspace ID where this data source will be created. Must be exactly 20 characters.",
+				MarkdownDescription: "The Funnel workspace ID where this data source will be created. Must be exactly 20 characters (letters, digits, `-` and `_`).",
 				Required:            true,
 				Validators: []validator.String{
-					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[A-Za-z0-9-_]{20}$`),
-						"must be exactly 20 characters and contain only alphanumeric characters, hyphens, and underscores",
-					),
+					common.WorkspaceIdValidator(),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -115,7 +112,7 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The source type identifier. Supported values include: `adwords` (Google Ads), `facebookads` (Facebook Ads), `tiktok` (TikTok Ads), `bing` (Microsoft Ads), `spotifyads` (Spotify Ads), `linkedin_api` (LinkedIn Ads), `instagraminsights` (Instagram Insights), `reddit` (Reddit Ads). Changing this forces a new resource to be created.",
+				MarkdownDescription: "The source type identifier, e.g. `adwords` (Google Ads) or `facebookads` (Facebook Ads). See the [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct) guide for all supported types. Changing this forces a new resource to be created.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -187,7 +184,7 @@ func (r *DataSourceResource) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 			},
 			"remote_struct": schema.StringAttribute{
-				MarkdownDescription: "A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers. Mutually exclusive with `remote_id`. Changing this forces a new resource to be created. For a full list of the how remote_struct should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).",
+				MarkdownDescription: "A JSON-encoded object containing remote identity fields for connectors that require multiple account identifiers. Mutually exclusive with `remote_id`. Changing this forces a new resource to be created. For how `remote_struct` should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{

@@ -1,9 +1,9 @@
-----
+---
 page_title: "Data source `remote_struct` for each data source type"
 subcategory: "Data source setup"
 ---
 
-# Data source `remote_struct` for the most popular data sources
+# Data source `remote_struct` for each data source type
 
 Each source type (e.g., `facebookads` and `adwords`) have a defined way to configure which data you will download from the platforms. Some platforms you only need to provide `remote_id` but for some platforms you will need to provide a JSON encoded string with the fields that are specified below.
 

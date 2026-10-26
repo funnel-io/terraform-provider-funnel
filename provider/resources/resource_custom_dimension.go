@@ -61,8 +61,11 @@ func (r *CustomDimensionResource) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"workspace": schema.StringAttribute{
-				MarkdownDescription: "Funnel workspace ID",
+				MarkdownDescription: "Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).",
 				Required:            true,
+				Validators: []validator.String{
+					common.WorkspaceIdValidator(),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -72,7 +75,7 @@ func (r *CustomDimensionResource) Schema(ctx context.Context, req resource.Schem
 				Required:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Custom metric description. Will be displayed in the Funnel UI.",
+				MarkdownDescription: "Custom dimension description. Will be displayed in the Funnel UI.",
 				Required:            true,
 			},
 			"unit": schema.StringAttribute{

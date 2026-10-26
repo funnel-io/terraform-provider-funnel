@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"terraform-provider-funnel/provider/common"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -69,14 +70,14 @@ func fetchToken(clientID, clientSecret, audience, tokenEndpoint string, ctx cont
 		return nil, fmt.Errorf("failed to marshal token request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, tokenEndpoint, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenEndpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create token request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to request token: %w", err)
 	}

@@ -50,14 +50,14 @@ func GetSubscriptionEntity[T any](ctx context.Context, entity string, subscripti
 	var respObj T
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), subscriptionId, entity, id)
-	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return respObj, err
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error reaching GET endpoint: %s", err))
 		return respObj, err
@@ -69,8 +69,8 @@ func GetSubscriptionEntity[T any](ctx context.Context, entity string, subscripti
 		return respObj, err
 	}
 
-	if err := json.Unmarshal(body, &respObj); err == nil {
-		return respObj, nil
+	if err := json.Unmarshal(body, &respObj); err != nil {
+		return respObj, fmt.Errorf("invalid response from get %s: %w", entity, err)
 	}
 
 	return respObj, nil
@@ -84,14 +84,14 @@ func CreateSubscriptionEntity[T any](ctx context.Context, entity string, subscri
 	}
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/%s", mapEnvironment(config.Environment.ValueString()), subscriptionId, entity)
-	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, &APIError{Message: "Failed to create request", Details: err}
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error creating %s: %s", entity, err))
 		return respObj, &APIError{Message: "Request failed", Details: err}
@@ -121,14 +121,14 @@ func UpdateSubscriptionEntity[T any](ctx context.Context, entity string, subscri
 	}
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), subscriptionId, entity, id)
-	req, err := http.NewRequest(http.MethodPut, reqURL, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, err
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error updating %s: %s", entity, err))
 		return respObj, err
@@ -151,14 +151,14 @@ func GetWorkspaceEntity[T any](ctx context.Context, entity string, config *commo
 	var respObj T
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
-	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return respObj, err
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error reaching GET endpoint: %s", err))
 		return respObj, err
@@ -170,8 +170,8 @@ func GetWorkspaceEntity[T any](ctx context.Context, entity string, config *commo
 		return respObj, err
 	}
 
-	if err := json.Unmarshal(body, &respObj); err == nil {
-		return respObj, nil
+	if err := json.Unmarshal(body, &respObj); err != nil {
+		return respObj, fmt.Errorf("invalid response from get %s: %w", entity, err)
 	}
 
 	return respObj, nil
@@ -186,14 +186,14 @@ func CreateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity)
 
-	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, &APIError{Message: "Failed to create request", Details: err}
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error creating %s: %s", entity, err))
 		return respObj, &APIError{Message: "Request failed", Details: err}
@@ -225,14 +225,14 @@ func UpdateWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity stri
 	}
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
-	req, err := http.NewRequest(http.MethodPut, reqURL, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, err
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error updating %s: %s", entity, err))
 		return respObj, err
@@ -260,14 +260,14 @@ func PatchWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity strin
 	}
 
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
-	req, err := http.NewRequest(http.MethodPatch, reqURL, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, reqURL, bytes.NewBuffer(body))
 	if err != nil {
 		return respObj, err
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error updating %s: %s", entity, err))
 		return respObj, err
@@ -289,14 +289,14 @@ func PatchWorkspaceEntity[TReq any, TResp any](ctx context.Context, entity strin
 
 func DeleteSubscriptionEntity(ctx context.Context, entity string, subscriptionId string, id string, config *common.FunnelProviderModel) error {
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), subscriptionId, entity, id)
-	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, reqURL, nil)
 	if err != nil {
 		return err
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error deleting %s: %s", entity, err))
 		return err
@@ -310,14 +310,14 @@ func DeleteSubscriptionEntity(ctx context.Context, entity string, subscriptionId
 func DeleteWorkspaceEntity(ctx context.Context, entity string, config *common.FunnelProviderModel, accountId string, id string) error {
 	reqURL := fmt.Sprintf("%s/subscriptions/%s/workspaces/%s/%s/%s", mapEnvironment(config.Environment.ValueString()), config.SubscriptionId.ValueString(), accountId, entity, id)
 
-	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, reqURL, nil)
 	if err != nil {
 		return err
 	}
 
 	ApplyHTTPHeaders(req, config.Token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := common.HTTPClient.Do(req)
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("Error deleting %s: %s", entity, err))
 		return err

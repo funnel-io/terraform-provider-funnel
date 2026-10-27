@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed attribute descriptions that were wrong or unclear, such as the export `id`, the custom dimension `description`, `format.type` and the provider's `client_id` and `client_secret`.
 - Fixed examples with invalid or misleading values for the workspace ID, the GA4 `remote_struct`, the Snowflake `account_locator` and the filters.
+- Every resource page now documents how to import it. Workspaces are imported by `<workspace_id>`, and all other resources by `<workspace_id>/<resource_id>`.
+
+### Removed
+
+- `destination.username` from `funnel_snowflake_export`. It only applied to V1 Snowflake exports, and the provider creates V2 exports. Remove it from your configuration before upgrading.
 
 ## [0.2.5] - 2026-10-21
 

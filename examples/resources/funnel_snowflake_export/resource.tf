@@ -31,7 +31,6 @@ resource "funnel_snowflake_export" "basic" {
     database        = "MARKETING_DB"
     schema_name     = "FUNNEL_DATA"
     table_name      = "DAILY_PERFORMANCE"
-    username        = "funnel_user"
     credential_id   = var.snowflake_credential_id
   }
 

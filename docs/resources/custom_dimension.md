@@ -51,3 +51,13 @@ resource "funnel_custom_dimension" "last_updated" {
 ### Read-Only
 
 - `id` (String) Custom dimension ID
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import funnel_custom_dimension.example <workspace_id>/<custom_dimension_id>
+```

@@ -31,7 +31,6 @@ type ExportSnowflakeDestination struct {
 	TableName      types.String `tfsdk:"table_name"`
 	Database       types.String `tfsdk:"database"`
 	SchemaName     types.String `tfsdk:"schema_name"`
-	Username       types.String `tfsdk:"username"`
 	CredentialId   types.String `tfsdk:"credential_id"`
 }
 
@@ -46,7 +45,6 @@ type FunnelSnowflakeDestinationJSON struct {
 	TableName      string `json:"tableName"`
 	Database       string `json:"database"`
 	SchemaName     string `json:"schemaName"`
-	Username       string `json:"username,omitempty"`
 	Version        string `json:"version"`
 }
 
@@ -100,10 +98,6 @@ func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaReque
 				Validators: []validator.String{
 					common.SnowflakeIdentifierValidator(),
 				},
-			},
-			"username": schema.StringAttribute{
-				MarkdownDescription: "User name to export data to",
-				Optional:            true,
 			},
 			"credential_id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the Funnel credential used to authenticate with Snowflake, found on the My Credentials page in Funnel. Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must have been shared with the System user in Funnel before it can be used here.",
@@ -339,10 +333,6 @@ func getSnowflakeExport(ctx context.Context, config *common.FunnelProviderModel,
 	export, err := common.ConvertJSONToTF[FunnelSnowflakeJSON, SnowflakeResourceModel](respObj)
 	if err != nil {
 		return nil, err
-	}
-
-	if respObj.Destination.Username == "" {
-		export.Destination.Username = types.StringNull()
 	}
 
 	if respObj.CredentialRef != "" {

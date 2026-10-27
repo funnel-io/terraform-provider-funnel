@@ -82,3 +82,13 @@ resource "funnel_custom_metric" "unique_campaigns" {
 ### Read-Only
 
 - `id` (String) Custom metric ID
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import funnel_custom_metric.example <workspace_id>/<custom_metric_id>
+```

@@ -3,7 +3,6 @@ package resources
 import (
 	"context"
 	"fmt"
-	"strings"
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
@@ -163,12 +162,7 @@ func (r *MeasurementResource) Read(ctx context.Context, req resource.ReadRequest
 
 	export.Id = data.Id
 	export.Workspace = data.Workspace
-	export.Notes = common.NormalizeEmptyString(export.Notes, data.Notes)
-	export.Currency = common.NormalizeEmptyString(export.Currency, data.Currency)
-	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, data.Range.Start)
-	export.Range.End = common.NormalizeEmptyString(export.Range.End, data.Range.End)
-	export.Filters = common.NormalizeFilters(export.Filters, data.Filters)
-	export.Fields = common.NormalizeFields(export.Fields, data.Fields)
+	common.NormalizeExport(&export.ExportShared, &data.ExportShared)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &export)...)
 }
 
@@ -193,17 +187,11 @@ func (r *MeasurementResource) Update(ctx context.Context, req resource.UpdateReq
 }
 
 func (r *MeasurementResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	idParts := strings.Split(req.ID, "/")
-	if len(idParts) != 2 {
-		resp.Diagnostics.AddError(
-			"Invalid Import ID",
-			"Expected import ID in format 'workspace_id/export_id', got: "+req.ID,
-		)
+	workspaceID, exportID, err := common.ParseExportImportID(req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid Import ID", err.Error())
 		return
 	}
-
-	workspaceID := idParts[0]
-	exportID := idParts[1]
 
 	export, err := getMeasurementExport(ctx, r.config, workspaceID, exportID)
 	if err != nil {
@@ -213,15 +201,14 @@ func (r *MeasurementResource) ImportState(ctx context.Context, req resource.Impo
 		)
 		return
 	}
+	if export == nil {
+		resp.Diagnostics.AddError("Export Not Found", "Export ID "+exportID+" was not found in workspace "+workspaceID)
+		return
+	}
 
 	export.Id = types.StringValue(exportID)
 	export.Workspace = types.StringValue(workspaceID)
-	export.Notes = common.NormalizeEmptyString(export.Notes, types.StringNull())
-	export.Currency = common.NormalizeEmptyString(export.Currency, types.StringNull())
-	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, types.StringNull())
-	export.Range.End = common.NormalizeEmptyString(export.Range.End, types.StringNull())
-	export.Filters = common.NormalizeFilters(export.Filters, nil)
-	export.Fields = common.NormalizeFields(export.Fields, nil)
+	common.NormalizeExport(&export.ExportShared, nil)
 	resp.Diagnostics.Append(resp.State.Set(ctx, export)...)
 }
 
@@ -245,6 +232,9 @@ func (r *MeasurementResource) Delete(ctx context.Context, req resource.DeleteReq
 
 func getMeasurementExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) (*MeasurementResourceModel, error) {
 	respObj, err := funnel.GetWorkspaceEntity[FunnelMeasurementJSON](ctx, "exports", config, accountId, id)
+	if funnel.IsNotFound(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -254,15 +244,7 @@ func getMeasurementExport(ctx context.Context, config *common.FunnelProviderMode
 	}
 
 	respObj.Destination.TableName = respObj.Destination.OutputIdTemplate
-	respObj.Fields = respObj.Query.Fields
-	respObj.Range = respObj.Query.Range
-	if respObj.Format.Type == "raw" {
-		respObj.Format.Type = "parquet"
-	}
-	if respObj.Currency == "*" {
-		respObj.Currency = ""
-	}
-	respObj.Filters = common.ConvertFiltersFromMeld(respObj.Query.Where)
+	common.ExportFromAPI(&respObj.ExportSharedJSON)
 
 	export, err := common.ConvertJSONToTF[FunnelMeasurementJSON, MeasurementResourceModel](respObj)
 	if err != nil {
@@ -310,9 +292,8 @@ func deleteMeasurementExport(ctx context.Context, config *common.FunnelProviderM
 }
 
 func prepareMeasurementExportData(data *FunnelMeasurementJSON, model MeasurementResourceModel) {
-	data.OnlyAllowEditFromAPI = true
+	common.ExportToAPI(&data.ExportSharedJSON, "iceberg")
 	data.Hidden = true
-	data.Type = "iceberg"
 	data.Destination.Type = "iceberg"
 	data.Destination.OutputIdTemplate = data.Destination.TableName
 
@@ -326,14 +307,5 @@ func prepareMeasurementExportData(data *FunnelMeasurementJSON, model Measurement
 			By:  "snapshot",
 			Per: "",
 		}
-	}
-	data.Query = common.QueryJSON{
-		Fields: data.Fields,
-		Range:  data.Range,
-		Where:  common.ConvertFiltersToMeld(data.Filters),
-	}
-	data.Format.Headers = "safename"
-	if data.Format.Type == "parquet" {
-		data.Format.Type = "raw"
 	}
 }

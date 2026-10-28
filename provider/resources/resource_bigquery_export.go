@@ -3,7 +3,6 @@ package resources
 import (
 	"context"
 	"fmt"
-	"strings"
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
@@ -125,10 +124,6 @@ func (r *BigqueryResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Create the export via API
 	respObj, err := createBigqueryExport(
 		ctx,
@@ -192,12 +187,7 @@ func (r *BigqueryResource) Read(ctx context.Context, req resource.ReadRequest, r
 	// Merge API response with state - preserve ID and workspace, prefer API values for everything else
 	export.Id = data.Id
 	export.Workspace = data.Workspace
-	export.Notes = common.NormalizeEmptyString(export.Notes, data.Notes)
-	export.Currency = common.NormalizeEmptyString(export.Currency, data.Currency)
-	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, data.Range.Start)
-	export.Range.End = common.NormalizeEmptyString(export.Range.End, data.Range.End)
-	export.Filters = common.NormalizeFilters(export.Filters, data.Filters)
-	export.Fields = common.NormalizeFields(export.Fields, data.Fields)
+	common.NormalizeExport(&export.ExportShared, &data.ExportShared)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &export)...)
@@ -208,10 +198,6 @@ func (r *BigqueryResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -233,18 +219,11 @@ func (r *BigqueryResource) Update(ctx context.Context, req resource.UpdateReques
 }
 
 func (r *BigqueryResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// The import ID format should be "workspace_id/export_id".
-	idParts := strings.Split(req.ID, "/")
-	if len(idParts) != 2 {
-		resp.Diagnostics.AddError(
-			"Invalid Import ID",
-			"Expected import ID in format 'workspace_id/export_id', got: "+req.ID,
-		)
+	workspaceID, exportID, err := common.ParseExportImportID(req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid Import ID", err.Error())
 		return
 	}
-
-	workspaceID := idParts[0]
-	exportID := idParts[1]
 
 	export, err := getBigqueryExport(ctx, r.config, workspaceID, exportID)
 	if err != nil {
@@ -254,15 +233,14 @@ func (r *BigqueryResource) ImportState(ctx context.Context, req resource.ImportS
 		)
 		return
 	}
+	if export == nil {
+		resp.Diagnostics.AddError("Export Not Found", "Export ID "+exportID+" was not found in workspace "+workspaceID)
+		return
+	}
 
 	export.Id = types.StringValue(exportID)
 	export.Workspace = types.StringValue(workspaceID)
-	export.Notes = common.NormalizeEmptyString(export.Notes, types.StringNull())
-	export.Currency = common.NormalizeEmptyString(export.Currency, types.StringNull())
-	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, types.StringNull())
-	export.Range.End = common.NormalizeEmptyString(export.Range.End, types.StringNull())
-	export.Filters = common.NormalizeFilters(export.Filters, nil)
-	export.Fields = common.NormalizeFields(export.Fields, nil)
+	common.NormalizeExport(&export.ExportShared, nil)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, export)...)
 }
@@ -295,6 +273,9 @@ func (r *BigqueryResource) Delete(ctx context.Context, req resource.DeleteReques
 
 func getBigqueryExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) (*BigqueryResourceModel, error) {
 	respObj, err := funnel.GetWorkspaceEntity[FunnelBigqueryJSON](ctx, "exports", config, accountId, id)
+	if funnel.IsNotFound(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -304,17 +285,7 @@ func getBigqueryExport(ctx context.Context, config *common.FunnelProviderModel, 
 		return nil, fmt.Errorf("export %s is not a BigQuery export (type: %s)", id, respObj.Destination.Type)
 	}
 
-	respObj.Fields = respObj.Query.Fields
-	respObj.Range = respObj.Query.Range
-	if respObj.Format.Type == "raw" {
-		respObj.Format.Type = "parquet"
-	}
-	// If not provided, the Exports API sets currency to "*" to pick up the workspace default currency
-	if respObj.Currency == "*" {
-		respObj.Currency = ""
-	}
-
-	respObj.Filters = common.ConvertFiltersFromMeld(respObj.Query.Where)
+	common.ExportFromAPI(&respObj.ExportSharedJSON)
 
 	export, err := common.ConvertJSONToTF[FunnelBigqueryJSON, BigqueryResourceModel](respObj)
 	if err != nil {
@@ -358,24 +329,11 @@ func deleteBigqueryExport(ctx context.Context, config *common.FunnelProviderMode
 
 // Mutating the BigQuery export data before sending to the API with defaults and conversions.
 func prepareBigqueryExportData(data *FunnelBigqueryJSON, model BigqueryResourceModel) {
-	mapped_filters := common.ConvertFiltersToMeld(data.Filters)
-
-	data.OnlyAllowEditFromAPI = true
-	data.Type = "bigquery"
+	common.ExportToAPI(&data.ExportSharedJSON, "bigquery")
 	data.Destination.Type = "bigquery"
 	data.Destination.SingleTable = true
-	data.Query = common.QueryJSON{
-		Fields: data.Fields,
-		Range:  data.Range,
-		Where:  mapped_filters,
-	}
 	if credentialId := model.Destination.CredentialId.ValueString(); credentialId != "" {
 		data.CredentialRef = credentialId
 		data.CredentialType = "connection"
-	}
-
-	data.Format.Headers = "safename"
-	if data.Format.Type == "parquet" {
-		data.Format.Type = "raw"
 	}
 }

@@ -2,6 +2,7 @@ package funnel
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -102,4 +103,10 @@ func HandleDeleteError(resp *http.Response, bodyBytes []byte) error {
 	default:
 		return fmt.Errorf("delete failed with status: %d", resp.StatusCode)
 	}
+}
+
+// IsNotFound reports whether err is an API 404, e.g. an entity deleted outside Terraform.
+func IsNotFound(err error) bool {
+	var apiErr APIError
+	return errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound
 }

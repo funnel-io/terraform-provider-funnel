@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.6] - Unreleased
+## [0.2.7] - Unreleased
+
+### Fixed
+
+- Exports deleted outside Terraform are now removed from state and recreated on the next apply. Before, every plan failed with a read error.
+- Exports no longer show a perpetual diff when `enabled` is not set. It now defaults to `false`, which is what the API already received.
+- `funnel_gcs_export` now reports a clear error when an export with the same destination already exists, like the other exports.
+
+## [0.2.6] - 2026-10-27
 
 ### Added
 

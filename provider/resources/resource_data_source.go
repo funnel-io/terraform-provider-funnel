@@ -89,6 +89,34 @@ type UpdateDataSourceRequest struct {
 	DownloadDisabled *bool   `json:"downloadDisabled,omitempty"`
 }
 
+func DataSourceFromJSON(ds DataSourceJSON, id string) DataSourceResourceModel {
+	data := DataSourceResourceModel{
+		Id:               types.StringValue(id),
+		Workspace:        types.StringValue(ds.FunnelAccountId),
+		Type:             types.StringValue(ds.Type),
+		Name:             types.StringValue(ds.Name),
+		DownloadDisabled: types.BoolValue(ds.DownloadDisabled),
+		ExcludeFromMeld:  types.BoolValue(ds.ExcludeFromMeld),
+		State:            types.StringValue(ds.State),
+		IsDemo:           types.BoolValue(ds.IsDemo),
+		CredentialId:     stringOrNull(ds.ConnectionId),
+		RemoteId:         stringOrNull(ds.RemoteId),
+		TemplateId:       stringOrNull(ds.TemplateId),
+		RemoteStruct:     types.StringNull(),
+	}
+	if len(ds.RemoteStruct) > 0 && string(ds.RemoteStruct) != "null" {
+		data.RemoteStruct = types.StringValue(string(ds.RemoteStruct))
+	}
+	return data
+}
+
+func stringOrNull(s string) types.String {
+	if s == "" {
+		return types.StringNull()
+	}
+	return types.StringValue(s)
+}
+
 func (r *DataSourceResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_data_source"
 }
@@ -302,38 +330,7 @@ func (r *DataSourceResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	data.Id = types.StringValue(respObj.Key)
-	data.Workspace = types.StringValue(respObj.FunnelAccountId)
-	data.Type = types.StringValue(respObj.Type)
-	data.Name = types.StringValue(respObj.Name)
-	data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
-	data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
-	data.State = types.StringValue(respObj.State)
-	data.IsDemo = types.BoolValue(respObj.IsDemo)
-
-	if respObj.ConnectionId != "" {
-		data.CredentialId = types.StringValue(respObj.ConnectionId)
-	} else {
-		data.CredentialId = types.StringNull()
-	}
-
-	if respObj.RemoteId != "" {
-		data.RemoteId = types.StringValue(respObj.RemoteId)
-	} else {
-		data.RemoteId = types.StringNull()
-	}
-
-	if len(respObj.RemoteStruct) > 0 && string(respObj.RemoteStruct) != "null" {
-		data.RemoteStruct = types.StringValue(string(respObj.RemoteStruct))
-	} else {
-		data.RemoteStruct = types.StringNull()
-	}
-
-	if respObj.TemplateId != "" {
-		data.TemplateId = types.StringValue(respObj.TemplateId)
-	} else {
-		data.TemplateId = types.StringNull()
-	}
+	data = DataSourceFromJSON(respObj, respObj.Key)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -359,37 +356,7 @@ func (r *DataSourceResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	data.Workspace = types.StringValue(ds.FunnelAccountId)
-	data.Type = types.StringValue(ds.Type)
-	data.Name = types.StringValue(ds.Name)
-	data.DownloadDisabled = types.BoolValue(ds.DownloadDisabled)
-	data.ExcludeFromMeld = types.BoolValue(ds.ExcludeFromMeld)
-	data.State = types.StringValue(ds.State)
-	data.IsDemo = types.BoolValue(ds.IsDemo)
-
-	if ds.ConnectionId != "" {
-		data.CredentialId = types.StringValue(ds.ConnectionId)
-	} else {
-		data.CredentialId = types.StringNull()
-	}
-
-	if ds.RemoteId != "" {
-		data.RemoteId = types.StringValue(ds.RemoteId)
-	} else {
-		data.RemoteId = types.StringNull()
-	}
-
-	if len(ds.RemoteStruct) > 0 && string(ds.RemoteStruct) != "null" {
-		data.RemoteStruct = types.StringValue(string(ds.RemoteStruct))
-	} else {
-		data.RemoteStruct = types.StringNull()
-	}
-
-	if ds.TemplateId != "" {
-		data.TemplateId = types.StringValue(ds.TemplateId)
-	} else {
-		data.TemplateId = types.StringNull()
-	}
+	data = DataSourceFromJSON(ds, data.Id.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -433,37 +400,7 @@ func (r *DataSourceResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	data.Workspace = types.StringValue(respObj.FunnelAccountId)
-	data.Type = types.StringValue(respObj.Type)
-	data.Name = types.StringValue(respObj.Name)
-	data.DownloadDisabled = types.BoolValue(respObj.DownloadDisabled)
-	data.ExcludeFromMeld = types.BoolValue(respObj.ExcludeFromMeld)
-	data.State = types.StringValue(respObj.State)
-	data.IsDemo = types.BoolValue(respObj.IsDemo)
-
-	if respObj.ConnectionId != "" {
-		data.CredentialId = types.StringValue(respObj.ConnectionId)
-	} else {
-		data.CredentialId = types.StringNull()
-	}
-
-	if respObj.RemoteId != "" {
-		data.RemoteId = types.StringValue(respObj.RemoteId)
-	} else {
-		data.RemoteId = types.StringNull()
-	}
-
-	if len(respObj.RemoteStruct) > 0 && string(respObj.RemoteStruct) != "null" {
-		data.RemoteStruct = types.StringValue(string(respObj.RemoteStruct))
-	} else {
-		data.RemoteStruct = types.StringNull()
-	}
-
-	if respObj.TemplateId != "" {
-		data.TemplateId = types.StringValue(respObj.TemplateId)
-	} else {
-		data.TemplateId = types.StringNull()
-	}
+	data = DataSourceFromJSON(respObj, data.Id.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -511,47 +448,6 @@ func (r *DataSourceResource) ImportState(ctx context.Context, req resource.Impor
 		return
 	}
 
-	var credentialId types.String
-	if ds.ConnectionId != "" {
-		credentialId = types.StringValue(ds.ConnectionId)
-	} else {
-		credentialId = types.StringNull()
-	}
-
-	var remoteId types.String
-	if ds.RemoteId != "" {
-		remoteId = types.StringValue(ds.RemoteId)
-	} else {
-		remoteId = types.StringNull()
-	}
-
-	var remoteStruct types.String
-	if len(ds.RemoteStruct) > 0 && string(ds.RemoteStruct) != "null" {
-		remoteStruct = types.StringValue(string(ds.RemoteStruct))
-	} else {
-		remoteStruct = types.StringNull()
-	}
-
-	var templateId types.String
-	if ds.TemplateId != "" {
-		templateId = types.StringValue(ds.TemplateId)
-	} else {
-		templateId = types.StringNull()
-	}
-
-	data := DataSourceResourceModel{
-		Id:               types.StringValue(dataSourceID),
-		Workspace:        types.StringValue(ds.FunnelAccountId),
-		Type:             types.StringValue(ds.Type),
-		Name:             types.StringValue(ds.Name),
-		DownloadDisabled: types.BoolValue(ds.DownloadDisabled),
-		ExcludeFromMeld:  types.BoolValue(ds.ExcludeFromMeld),
-		State:            types.StringValue(ds.State),
-		CredentialId:     credentialId,
-		RemoteId:         remoteId,
-		RemoteStruct:     remoteStruct,
-		TemplateId:       templateId,
-		IsDemo:           types.BoolValue(ds.IsDemo),
-	}
+	data := DataSourceFromJSON(ds, dataSourceID)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

@@ -103,6 +103,7 @@ func (p *funnelProvider) DataSources(ctx context.Context) []func() datasource.Da
 	return []func() datasource.DataSource{
 		datasources.NewCustomDimensionDataSource,
 		datasources.NewCustomMetricDataSource,
+		datasources.NewDataSourceDataSource,
 		datasources.NewExportFieldDataSource,
 		datasources.NewWorkspaceDataSource,
 	}

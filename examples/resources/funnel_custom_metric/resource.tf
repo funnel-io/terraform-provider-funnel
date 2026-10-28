@@ -47,3 +47,46 @@ resource "funnel_custom_metric" "unique_campaigns" {
   aggregation = "COUNT"
   precision   = 0
 }
+
+# Metric with rules, here copied from the Funnel UI. Built-in field IDs like "adwords-conversions" work in any workspace.
+resource "funnel_custom_metric" "conversions_by_source" {
+  workspace   = var.workspace_id
+  name        = "Conversions By Source"
+  description = "Google Ads conversions for Google Ads, regular conversions for everything else"
+  unit        = "number"
+  aggregation = "SUM"
+  derived = jsonencode({
+    expr = {
+      "=case" = [
+        {
+          "=when" = { sourceType = { "=eq" = "adwords" } }
+          "=then" = {
+            "=case" = [{
+              "=when" = true
+              "=then" = { "=value" = [{ "=get" = "adwords-conversions" }] }
+            }]
+          }
+        },
+        {
+          "=when" = true
+          "=then" = {
+            "=case" = [{
+              "=when" = true
+              "=then" = { "=value" = [{ "=get" = "conversions" }] }
+            }]
+          }
+        },
+      ]
+    }
+  })
+}
+
+# Rules exported from the Funnel UI and kept in a file
+resource "funnel_custom_metric" "from_file" {
+  workspace   = var.workspace_id
+  name        = "Blended Conversions"
+  description = "Rules maintained in the Funnel UI"
+  unit        = "number"
+  aggregation = "SUM"
+  derived     = file("${path.module}/blended_conversions.json")
+}

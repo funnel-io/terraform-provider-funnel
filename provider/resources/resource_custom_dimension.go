@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -31,18 +33,20 @@ type CustomDimensionResource struct {
 }
 
 type CustomDimensionResourceModel struct {
-	Id          types.String `tfsdk:"id"`
-	Workspace   types.String `tfsdk:"workspace"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	Unit        types.String `tfsdk:"unit"`
+	Id          types.String         `tfsdk:"id"`
+	Workspace   types.String         `tfsdk:"workspace"`
+	Name        types.String         `tfsdk:"name"`
+	Description types.String         `tfsdk:"description"`
+	Unit        types.String         `tfsdk:"unit"`
+	Derived     jsontypes.Normalized `tfsdk:"derived"`
 }
 
 type FunnelCustomDimensionJSON struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Unit        string `json:"unit"`
+	Id          string          `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Unit        string          `json:"unit"`
+	Derived     json.RawMessage `json:"derived,omitempty"`
 }
 
 func (r *CustomDimensionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -51,7 +55,7 @@ func (r *CustomDimensionResource) Metadata(ctx context.Context, req resource.Met
 
 func (r *CustomDimensionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Custom dimension resource",
+		MarkdownDescription: "Manages a custom dimension in a Funnel workspace. Rules in `derived` are easiest to build in the Funnel UI. Import the dimension afterwards, or copy it to other workspaces with the `funnel_custom_dimension` data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Custom dimension ID",
@@ -85,6 +89,11 @@ func (r *CustomDimensionResource) Schema(ctx context.Context, req resource.Schem
 					stringvalidator.OneOf("string", "date", "datetime"),
 				},
 			},
+			"derived": schema.StringAttribute{
+				MarkdownDescription: "JSON-encoded rules for how the dimension is calculated, in Funnel's expression format. Easiest to build in the Funnel UI, then import the dimension or copy it with the `funnel_custom_dimension` data source. `=case` branches are evaluated in order. Built-in field IDs work in any workspace, but references to custom fields should use the field's Terraform `id`.",
+				CustomType:          jsontypes.NormalizedType{},
+				Optional:            true,
+			},
 		},
 	}
 }
@@ -106,6 +115,28 @@ func (r *CustomDimensionResource) Configure(ctx context.Context, req resource.Co
 	r.config = config
 }
 
+// Maps an API response to the Terraform model. Shared with the custom dimension data source.
+func CustomDimensionFromJSON(respObj FunnelCustomDimensionJSON, workspace string) CustomDimensionResourceModel {
+	return CustomDimensionResourceModel{
+		Id:          types.StringValue(respObj.Id),
+		Workspace:   types.StringValue(workspace),
+		Name:        types.StringValue(respObj.Name),
+		Description: types.StringValue(respObj.Description),
+		Unit:        types.StringValue(respObj.Unit),
+		Derived:     common.RawJSONToNormalized(respObj.Derived),
+	}
+}
+
+func customDimensionToJSON(data CustomDimensionResourceModel) FunnelCustomDimensionJSON {
+	return FunnelCustomDimensionJSON{
+		Id:          data.Id.ValueString(),
+		Name:        data.Name.ValueString(),
+		Description: data.Description.ValueString(),
+		Unit:        data.Unit.ValueString(),
+		Derived:     common.NormalizedToRawJSON(data.Derived),
+	}
+}
+
 func (r *CustomDimensionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data CustomDimensionResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -113,11 +144,7 @@ func (r *CustomDimensionResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	payload := FunnelCustomDimensionJSON{
-		Name:        data.Name.ValueString(),
-		Description: data.Description.ValueString(),
-		Unit:        data.Unit.ValueString(),
-	}
+	payload := customDimensionToJSON(data)
 
 	tflog.Info(ctx, "Creating custom dimension", map[string]any{"name": payload.Name})
 	respObj, apiErr := funnel.CreateWorkspaceEntity[FunnelCustomDimensionJSON, FunnelCustomDimensionJSON](ctx, "custom-fields", r.config, data.Workspace.ValueString(), payload)
@@ -129,10 +156,7 @@ func (r *CustomDimensionResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	data.Id = types.StringValue(respObj.Id)
-	data.Name = types.StringValue(respObj.Name)
-	data.Description = types.StringValue(respObj.Description)
-	data.Unit = types.StringValue(respObj.Unit)
+	data = CustomDimensionFromJSON(respObj, data.Workspace.ValueString())
 
 	tflog.Info(ctx, "Created custom dimension", map[string]any{"id": respObj.Id})
 
@@ -161,10 +185,7 @@ func (r *CustomDimensionResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	data.Id = types.StringValue(respObj.Id)
-	data.Name = types.StringValue(respObj.Name)
-	data.Description = types.StringValue(respObj.Description)
-	data.Unit = types.StringValue(respObj.Unit)
+	data = CustomDimensionFromJSON(respObj, data.Workspace.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -176,12 +197,7 @@ func (r *CustomDimensionResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	payload := FunnelCustomDimensionJSON{
-		Id:          data.Id.ValueString(),
-		Name:        data.Name.ValueString(),
-		Description: data.Description.ValueString(),
-		Unit:        data.Unit.ValueString(),
-	}
+	payload := customDimensionToJSON(data)
 
 	tflog.Info(ctx, "Updating custom dimension", map[string]any{"id": data.Id.ValueString(), "name": payload.Name})
 	_, err := funnel.UpdateWorkspaceEntity[FunnelCustomDimensionJSON, FunnelCustomDimensionJSON](ctx, "custom-fields", r.config, data.Workspace.ValueString(), data.Id.ValueString(), payload)
@@ -237,13 +253,7 @@ func (r *CustomDimensionResource) ImportState(ctx context.Context, req resource.
 		return
 	}
 
-	data := CustomDimensionResourceModel{
-		Id:          types.StringValue(respObj.Id),
-		Workspace:   types.StringValue(workspaceID),
-		Name:        types.StringValue(respObj.Name),
-		Description: types.StringValue(respObj.Description),
-		Unit:        types.StringValue(respObj.Unit),
-	}
+	data := CustomDimensionFromJSON(respObj, workspaceID)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

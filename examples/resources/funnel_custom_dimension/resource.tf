@@ -21,3 +21,33 @@ resource "funnel_custom_dimension" "last_updated" {
   description = "Timestamp of the last data update"
   unit        = "datetime"
 }
+
+# Dimension with rules, here copied from the Funnel UI. `=case` branches are evaluated in order.
+resource "funnel_custom_dimension" "brand" {
+  workspace   = var.workspace_id
+  name        = "Brand"
+  description = "Brand name for all data"
+  unit        = "string"
+  derived = jsonencode({
+    expr = {
+      "=case" = [{
+        "=when" = true
+        "=then" = {
+          "=case" = [{
+            "=when" = true
+            "=then" = { "=value" = [{ "=string" = "Test Brand" }] }
+          }]
+        }
+      }]
+    }
+  })
+}
+
+# Rules exported from the Funnel UI and kept in a file
+resource "funnel_custom_dimension" "from_file" {
+  workspace   = var.workspace_id
+  name        = "Market"
+  description = "Rules maintained in the Funnel UI"
+  unit        = "string"
+  derived     = file("${path.module}/market.json")
+}

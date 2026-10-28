@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.7] - Unreleased
 
+### Added
+
+- `derived` on `funnel_custom_metric` and `funnel_custom_dimension`, so custom fields with rules can be managed. It takes the rules as JSON, and it is easiest to build them in the Funnel UI and import the field.
+- `funnel_custom_metric` and `funnel_custom_dimension` data sources, to copy a field and its rules from one workspace to another.
+
 ### Fixed
 
 - Exports deleted outside Terraform are now removed from state and recreated on the next apply. Before, every plan failed with a read error.
 - Exports no longer show a perpetual diff when `enabled` is not set. It now defaults to `false`, which is what the API already received.
 - `funnel_gcs_export` now reports a clear error when an export with the same destination already exists, like the other exports.
+- `funnel_custom_metric` no longer fails after apply when `precision` is not set. It now defaults to `0`.
 
 ## [0.2.6] - 2026-10-27
 

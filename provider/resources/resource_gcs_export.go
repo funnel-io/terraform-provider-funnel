@@ -3,7 +3,6 @@ package resources
 import (
 	"context"
 	"fmt"
-	"strings"
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
@@ -130,16 +129,19 @@ func (r *GCSResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	respObj, err := createExport(
 		ctx,
 		r.config,
 		data,
 	)
 	if err != nil {
+		if err.StatusCode == 409 {
+			resp.Diagnostics.AddError(
+				"Export in the same workspace with same destination configuration already exists",
+				fmt.Sprintf("An export with the same configuration already exists: %v", err.Details),
+			)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"Error Creating GCS Export",
 			"Could not create GCS export: "+err.Error(),
@@ -188,12 +190,7 @@ func (r *GCSResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	// Merge API response with state - preserve ID and workspace, prefer API values for everything else
 	export.Id = data.Id
 	export.Workspace = data.Workspace
-	export.Notes = common.NormalizeEmptyString(export.Notes, data.Notes)
-	export.Currency = common.NormalizeEmptyString(export.Currency, data.Currency)
-	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, data.Range.Start)
-	export.Range.End = common.NormalizeEmptyString(export.Range.End, data.Range.End)
-	export.Filters = common.NormalizeFilters(export.Filters, data.Filters)
-	export.Fields = common.NormalizeFields(export.Fields, data.Fields)
+	common.NormalizeExport(&export.ExportShared, &data.ExportShared)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &export)...)
@@ -204,10 +201,6 @@ func (r *GCSResource) Update(ctx context.Context, req resource.UpdateRequest, re
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -256,18 +249,11 @@ func (r *GCSResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 }
 
 func (r *GCSResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// The import ID format should be "workspace_id/export_id".
-	idParts := strings.Split(req.ID, "/")
-	if len(idParts) != 2 {
-		resp.Diagnostics.AddError(
-			"Invalid Import ID",
-			"Expected import ID in format 'workspace_id/export_id', got: "+req.ID,
-		)
+	workspaceID, exportID, err := common.ParseExportImportID(req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid Import ID", err.Error())
 		return
 	}
-
-	workspaceID := idParts[0]
-	exportID := idParts[1]
 
 	export, err := getExport(ctx, r.config, workspaceID, exportID)
 	if err != nil {
@@ -277,21 +263,23 @@ func (r *GCSResource) ImportState(ctx context.Context, req resource.ImportStateR
 		)
 		return
 	}
+	if export == nil {
+		resp.Diagnostics.AddError("Export Not Found", "Export ID "+exportID+" was not found in workspace "+workspaceID)
+		return
+	}
 
 	export.Id = types.StringValue(exportID)
 	export.Workspace = types.StringValue(workspaceID)
-	export.Notes = common.NormalizeEmptyString(export.Notes, types.StringNull())
-	export.Currency = common.NormalizeEmptyString(export.Currency, types.StringNull())
-	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, types.StringNull())
-	export.Range.End = common.NormalizeEmptyString(export.Range.End, types.StringNull())
-	export.Filters = common.NormalizeFilters(export.Filters, nil)
-	export.Fields = common.NormalizeFields(export.Fields, nil)
+	common.NormalizeExport(&export.ExportShared, nil)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, export)...)
 }
 
 func getExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) (*FunnelGCSResource, error) {
 	respObj, err := funnel.GetWorkspaceEntity[FunnelGCSJSON](ctx, "exports", config, accountId, id)
+	if funnel.IsNotFound(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -301,16 +289,7 @@ func getExport(ctx context.Context, config *common.FunnelProviderModel, accountI
 		return nil, fmt.Errorf("export %s is not a GCS export (type: %s)", id, respObj.Destination.Type)
 	}
 
-	respObj.Fields = respObj.Query.Fields
-	respObj.Range = respObj.Query.Range
-	if respObj.Format.Type == "raw" {
-		respObj.Format.Type = "parquet"
-	}
-	// If not provided, the Exports API sets currency to "*" to pick up the workspace default currency
-	if respObj.Currency == "*" {
-		respObj.Currency = ""
-	}
-	respObj.Filters = common.ConvertFiltersFromMeld(respObj.Query.Where)
+	common.ExportFromAPI(&respObj.ExportSharedJSON)
 
 	export, err := common.ConvertJSONToTF[FunnelGCSJSON, FunnelGCSResource](respObj)
 	if err != nil {
@@ -348,23 +327,11 @@ func deleteGCSExport(ctx context.Context, config *common.FunnelProviderModel, ac
 
 // Mutating the GCS export data before sending to the API with defaults and conversions.
 func prepareGCSExportData(data *FunnelGCSJSON, model FunnelGCSResource) {
-	mapped_filters := common.ConvertFiltersToMeld(data.Filters)
-
-	data.OnlyAllowEditFromAPI = true
-	data.Type = "gcs"
+	common.ExportToAPI(&data.ExportSharedJSON, "gcs")
 	data.Destination.Type = "gcs"
 	data.Destination.GZip = data.Destination.GZip || true
 	data.Destination.SchemaFileFormat = "sql"
 	data.Destination.SchemaFileIdTemplate = "{runId}/funnel_schema"
 	data.Destination.SummaryFileFormat = "csv"
 	data.Destination.SummaryFileIdTemplate = "{runId}/funnel_summary"
-	data.Query = common.QueryJSON{
-		Fields: data.Fields,
-		Range:  data.Range,
-		Where:  mapped_filters,
-	}
-	data.Format.Headers = "safename"
-	if data.Format.Type == "parquet" {
-		data.Format.Type = "raw"
-	}
 }

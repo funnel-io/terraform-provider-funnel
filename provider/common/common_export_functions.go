@@ -1,9 +1,13 @@
 package common
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -334,9 +338,10 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 				},
 			},
 			"enabled": schema.BoolAttribute{
-				MarkdownDescription: "Whether the export is enabled",
-				Required:            false,
+				MarkdownDescription: "Whether the export is enabled. Defaults to `false`.",
 				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 		},
 	}
@@ -385,4 +390,56 @@ func NormalizeFields(fields []ExportField, prior []ExportField) []ExportField {
 		fields[i].ExportType = NormalizeEmptyString(fields[i].ExportType, p.ExportType)
 	}
 	return fields
+}
+
+// Normalizes an export read from the API against the prior state, see NormalizeEmptyString, NormalizeFilters
+// and NormalizeFields. Pass a nil prior on import.
+func NormalizeExport(export *ExportShared, prior *ExportShared) {
+	if prior == nil {
+		prior = &ExportShared{}
+	}
+	export.Notes = NormalizeEmptyString(export.Notes, prior.Notes)
+	export.Currency = NormalizeEmptyString(export.Currency, prior.Currency)
+	export.Range.Start = NormalizeEmptyString(export.Range.Start, prior.Range.Start)
+	export.Range.End = NormalizeEmptyString(export.Range.End, prior.Range.End)
+	export.Filters = NormalizeFilters(export.Filters, prior.Filters)
+	export.Fields = NormalizeFields(export.Fields, prior.Fields)
+}
+
+// Maps an export from the API to the shape of the Terraform model before conversion.
+func ExportFromAPI(data *ExportSharedJSON) {
+	data.Fields = data.Query.Fields
+	data.Range = data.Query.Range
+	data.Filters = ConvertFiltersFromMeld(data.Query.Where)
+	if data.Format.Type == "raw" {
+		data.Format.Type = "parquet"
+	}
+	// If not provided, the Exports API sets currency to "*" to pick up the workspace default currency
+	if data.Currency == "*" {
+		data.Currency = ""
+	}
+}
+
+// Mutates an export before sending it to the API with defaults and conversions shared by all export types.
+func ExportToAPI(data *ExportSharedJSON, exportType string) {
+	data.OnlyAllowEditFromAPI = true
+	data.Type = exportType
+	data.Query = QueryJSON{
+		Fields: data.Fields,
+		Range:  data.Range,
+		Where:  ConvertFiltersToMeld(data.Filters),
+	}
+	data.Format.Headers = "safename"
+	if data.Format.Type == "parquet" {
+		data.Format.Type = "raw"
+	}
+}
+
+// Splits an import ID in the format "workspace_id/export_id".
+func ParseExportImportID(id string) (workspaceID string, exportID string, err error) {
+	parts := strings.Split(id, "/")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("expected import ID in format 'workspace_id/export_id', got: %s", id)
+	}
+	return parts[0], parts[1], nil
 }

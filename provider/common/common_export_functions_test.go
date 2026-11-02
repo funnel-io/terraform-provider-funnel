@@ -94,3 +94,23 @@ func TestNormalizeFields(t *testing.T) {
 		t.Errorf("expected id/type to be kept, got %+v", got[0])
 	}
 }
+
+func TestNormalizeExportWithoutPrior(t *testing.T) {
+	export := ExportShared{
+		Notes:    types.StringValue(""),
+		Currency: types.StringValue(""),
+		Range:    ExportRange{Start: types.StringValue(""), End: types.StringValue("")},
+		Filters:  []ExportFilter{},
+	}
+
+	NormalizeExport(&export, nil)
+
+	for _, v := range []types.String{export.Notes, export.Currency, export.Range.Start, export.Range.End} {
+		if !v.IsNull() {
+			t.Errorf("expected null, got %s", v)
+		}
+	}
+	if export.Filters != nil {
+		t.Errorf("expected nil filters, got %v", export.Filters)
+	}
+}

@@ -96,7 +96,7 @@ resource "funnel_bigquery_export" "basic" {
 ### Optional
 
 - `currency` (String) Export currency as an uppercase ISO 4217 code, e.g. `USD` or `EUR`. If not set, the workspace default currency is used.
-- `enabled` (Boolean) Whether the export is enabled
+- `enabled` (Boolean) Whether the export is enabled. Defaults to `false`.
 - `filters` (Attributes List) Export filters (see [below for nested schema](#nestedatt--filters))
 - `notes` (String) Export notes that can be seen in the Funnel app
 

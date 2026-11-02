@@ -3,7 +3,6 @@ package resources
 import (
 	"context"
 	"fmt"
-	"strings"
 	"terraform-provider-funnel/provider/common"
 	"terraform-provider-funnel/provider/funnel"
 
@@ -139,10 +138,6 @@ func (r *SnowflakeResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Create the export via API
 	respObj, err := createSnowflakeExport(
 		ctx,
@@ -206,12 +201,7 @@ func (r *SnowflakeResource) Read(ctx context.Context, req resource.ReadRequest, 
 	// Merge API response with state - preserve ID and workspace, prefer API values for everything else
 	export.Id = data.Id
 	export.Workspace = data.Workspace
-	export.Notes = common.NormalizeEmptyString(export.Notes, data.Notes)
-	export.Currency = common.NormalizeEmptyString(export.Currency, data.Currency)
-	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, data.Range.Start)
-	export.Range.End = common.NormalizeEmptyString(export.Range.End, data.Range.End)
-	export.Filters = common.NormalizeFilters(export.Filters, data.Filters)
-	export.Fields = common.NormalizeFields(export.Fields, data.Fields)
+	common.NormalizeExport(&export.ExportShared, &data.ExportShared)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &export)...)
@@ -222,10 +212,6 @@ func (r *SnowflakeResource) Update(ctx context.Context, req resource.UpdateReque
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -247,18 +233,11 @@ func (r *SnowflakeResource) Update(ctx context.Context, req resource.UpdateReque
 }
 
 func (r *SnowflakeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// The import ID format should be "workspace_id/export_id".
-	idParts := strings.Split(req.ID, "/")
-	if len(idParts) != 2 {
-		resp.Diagnostics.AddError(
-			"Invalid Import ID",
-			"Expected import ID in format 'workspace_id/export_id', got: "+req.ID,
-		)
+	workspaceID, exportID, err := common.ParseExportImportID(req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid Import ID", err.Error())
 		return
 	}
-
-	workspaceID := idParts[0]
-	exportID := idParts[1]
 
 	export, err := getSnowflakeExport(ctx, r.config, workspaceID, exportID)
 	if err != nil {
@@ -268,15 +247,14 @@ func (r *SnowflakeResource) ImportState(ctx context.Context, req resource.Import
 		)
 		return
 	}
+	if export == nil {
+		resp.Diagnostics.AddError("Export Not Found", "Export ID "+exportID+" was not found in workspace "+workspaceID)
+		return
+	}
 
 	export.Id = types.StringValue(exportID)
 	export.Workspace = types.StringValue(workspaceID)
-	export.Notes = common.NormalizeEmptyString(export.Notes, types.StringNull())
-	export.Currency = common.NormalizeEmptyString(export.Currency, types.StringNull())
-	export.Range.Start = common.NormalizeEmptyString(export.Range.Start, types.StringNull())
-	export.Range.End = common.NormalizeEmptyString(export.Range.End, types.StringNull())
-	export.Filters = common.NormalizeFilters(export.Filters, nil)
-	export.Fields = common.NormalizeFields(export.Fields, nil)
+	common.NormalizeExport(&export.ExportShared, nil)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, export)...)
 }
@@ -309,6 +287,9 @@ func (r *SnowflakeResource) Delete(ctx context.Context, req resource.DeleteReque
 
 func getSnowflakeExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) (*SnowflakeResourceModel, error) {
 	respObj, err := funnel.GetWorkspaceEntity[FunnelSnowflakeJSON](ctx, "exports", config, accountId, id)
+	if funnel.IsNotFound(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -318,17 +299,7 @@ func getSnowflakeExport(ctx context.Context, config *common.FunnelProviderModel,
 		return nil, fmt.Errorf("export %s is not a Snowflake export (type: %s)", id, respObj.Destination.Type)
 	}
 
-	respObj.Fields = respObj.Query.Fields
-	respObj.Range = respObj.Query.Range
-	if respObj.Format.Type == "raw" {
-		respObj.Format.Type = "parquet"
-	}
-	// If not provided, the Exports API sets currency to "*" to pick up the workspace default currency
-	if respObj.Currency == "*" {
-		respObj.Currency = ""
-	}
-
-	respObj.Filters = common.ConvertFiltersFromMeld(respObj.Query.Where)
+	common.ExportFromAPI(&respObj.ExportSharedJSON)
 
 	export, err := common.ConvertJSONToTF[FunnelSnowflakeJSON, SnowflakeResourceModel](respObj)
 	if err != nil {
@@ -372,22 +343,9 @@ func deleteSnowflakeExport(ctx context.Context, config *common.FunnelProviderMod
 
 // Mutating the Snowflake export data before sending to the API with defaults and conversions.
 func prepareSnowflakeExportData(data *FunnelSnowflakeJSON, model SnowflakeResourceModel) {
-	mapped_filters := common.ConvertFiltersToMeld(data.Filters)
-
-	data.OnlyAllowEditFromAPI = true
-	data.Type = "snowflake"
+	common.ExportToAPI(&data.ExportSharedJSON, "snowflake")
 	data.Destination.Type = "snowflake"
 	data.Destination.Version = "V2"
-	data.Query = common.QueryJSON{
-		Fields: data.Fields,
-		Range:  data.Range,
-		Where:  mapped_filters,
-	}
 	data.CredentialRef = model.Destination.CredentialId.ValueString()
 	data.CredentialType = "connection"
-
-	data.Format.Headers = "safename"
-	if data.Format.Type == "parquet" {
-		data.Format.Type = "raw"
-	}
 }

@@ -1,0 +1,32 @@
+name: Security Review
+
+on:
+  pull_request:
+
+permissions:
+  pull-requests: write
+  contents: read
+
+concurrency:
+  group: security-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Intentionally follow the latest trusted Funnel-owned implementation.
+      - uses: funnel-io/github-actions/composite/security-review@master # nosemgrep
+        with:
+          claude-api-key: ${{ secrets.CLAUDE_SECURITY_REVIEW_KEY }}
+          devsec-read-key: ${{ secrets.DEVSEC_READ_KEY }}

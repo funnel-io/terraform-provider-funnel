@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `derived` on `funnel_custom_metric` and `funnel_custom_dimension`, so custom fields with rules can be managed. It takes the rules as JSON, and it is easiest to build them in the Funnel UI and import the field.
 - `funnel_custom_metric` and `funnel_custom_dimension` data sources, to copy a field and its rules from one workspace to another.
+- `funnel_data_source` data source, to copy a data source from one workspace to another.
 
 ### Fixed
 

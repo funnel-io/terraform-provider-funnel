@@ -143,7 +143,7 @@ Required:
 
 Required:
 
-- `by` (String) Field to partition by. One of: `none`, `date`, or `snapshot`. Snapshot is only supported for measurement exports. **Recommended:** `date`
+- `by` (String) Field to partition by. One of: `none` or `date`. **Recommended:** `date`
 - `per` (String) Type of partitioning. One of: `day`, `week`, `month`, `quarter`, or `year`. **Recommended:** `month`
 
 

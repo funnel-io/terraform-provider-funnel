@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.7] - Unreleased
+## [0.3.0] - Unreleased
+
+### Removed
+
+- `funnel_measurement_export`, deprecated since 0.2.4. Remove it from your configuration and state before upgrading.
+- The `snapshot` value for `partition_schema.by`. It only applied to measurement exports.
+
+## [0.2.7] - 2026-11-18
 
 ### Added
 
@@ -148,7 +155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Funnel Measurment exports as a resource.
+- Funnel Measurement exports as a resource.
 
 ### Removed
 

@@ -314,10 +314,10 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 				Required:            true,
 				Attributes: map[string]schema.Attribute{
 					"by": schema.StringAttribute{
-						MarkdownDescription: "Field to partition by. One of: `none`, `date`, or `snapshot`. Snapshot is only supported for measurement exports. **Recommended:** `date`",
+						MarkdownDescription: "Field to partition by. One of: `none` or `date`. **Recommended:** `date`",
 						Required:            true,
 						Validators: []validator.String{
-							stringvalidator.OneOf("none", "date", "snapshot"),
+							stringvalidator.OneOf("none", "date"),
 						},
 					},
 					"per": schema.StringAttribute{

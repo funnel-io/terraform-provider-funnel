@@ -31,7 +31,7 @@ resource "funnel_gcs_export" "basic" {
     path               = "marketing-data"
     output_id_template = "funnel_export_{date}"
     credentials_ref    = "gcs-service-account-key"
-    gzip               = true
+    file_format        = "parquet"
   }
 
   fields = [
@@ -41,24 +41,13 @@ resource "funnel_gcs_export" "basic" {
     data.funnel_export_field.cost
   ]
 
-  format = {
-    type    = "parquet"
-    metrics = "export"
-  }
-
   range = {
+    end = "today"
     rolling_start = {
-      period  = "day"
-      periods = 7
-    }
-    rolling_end = {
-      period  = "day"
-      periods = -1
+      period  = "month"
+      periods = 3
     }
   }
 
-  partition_schema = {
-    by  = "date"
-    per = "month"
-  }
+  partition_by = "month"
 }

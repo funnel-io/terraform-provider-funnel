@@ -41,24 +41,13 @@ resource "funnel_snowflake_export" "basic" {
     data.funnel_export_field.cost
   ]
 
-  format = {
-    type    = "parquet"
-    metrics = "export"
-  }
-
   range = {
+    end = "today"
     rolling_start = {
-      period  = "day"
-      periods = 7
-    }
-    rolling_end = {
-      period  = "day"
-      periods = -1
+      period  = "month"
+      periods = 3
     }
   }
 
-  partition_schema = {
-    by  = "date"
-    per = "month"
-  }
+  partition_by = "month"
 }

@@ -26,10 +26,10 @@ type BigqueryResource struct {
 }
 
 type ExportBigqueryDestination struct {
-	OutputIdTemplate types.String `tfsdk:"output_id_template"`
-	DatasetId        types.String `tfsdk:"dataset_id"`
-	ProjectId        types.String `tfsdk:"project_id"`
-	CredentialId     types.String `tfsdk:"credential_id"`
+	TableNameTemplate types.String `tfsdk:"table_name_template"`
+	DatasetId         types.String `tfsdk:"dataset_id"`
+	ProjectId         types.String `tfsdk:"project_id"`
+	CredentialId      types.String `tfsdk:"credential_id"`
 }
 
 type BigqueryResourceModel struct {
@@ -38,11 +38,11 @@ type BigqueryResourceModel struct {
 }
 
 type FunnelBigqueryDestinationJSON struct {
-	Type             string `json:"type"`
-	OutputIdTemplate string `json:"outputIdTemplate"`
-	DatasetId        string `json:"datasetId"`
-	ProjectId        string `json:"projectId"`
-	SingleTable      bool   `json:"singleTable"`
+	Type              string `json:"type"`
+	TableNameTemplate string `json:"outputIdTemplate"`
+	DatasetId         string `json:"datasetId"`
+	ProjectId         string `json:"projectId"`
+	SingleTable       bool   `json:"singleTable"`
 }
 
 // CredentialRef/CredentialType live on the root of the export in Funnel, but are
@@ -63,8 +63,8 @@ func (r *BigqueryResource) Schema(ctx context.Context, req resource.SchemaReques
 		MarkdownDescription: "Bigquery destination table",
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
-			"output_id_template": schema.StringAttribute{
-				MarkdownDescription: "BigQuery table name for the export. May contain letters, digits, underscores and placeholders such as `{date}`.",
+			"table_name_template": schema.StringAttribute{
+				MarkdownDescription: "BigQuery table name for the export, using letters, digits and underscores, such as `funnel_export`. You can optionally add the placeholders `{runId}`, `{runDate}`, `{runHour}`, `{workspaceId}` or `{dataShareId}`, for example to make the name unique per workspace.",
 				Required:            true,
 				Validators: []validator.String{
 					common.BigqueryTableTemplateValidator(),
@@ -92,7 +92,9 @@ func (r *BigqueryResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 		},
-	}, "BigQuery export")
+	}, "Exports data from a Funnel workspace to a table in Google BigQuery on a schedule.\n\n"+
+		"Funnel needs write access to the BigQuery project before the export can run. See [Google BigQuery Dataset configuration](https://help.funnel.io/google-bigquery-connector/google-bigquery-dataset-configuration) for how to grant it.\n\n"+
+		"Each run only re-exports months with data that has changed in Funnel since the last export. See [Best practices when setting up a Data Warehouse Export in Funnel](https://help.funnel.io/en/articles/5659437-best-practices-when-setting-up-a-data-warehouse-export-in-funnel#h_111d006e03) for the exact conditions.")
 }
 
 func (r *BigqueryResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {

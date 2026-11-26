@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -13,11 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
-
-type ExportFormat struct {
-	Type    types.String `tfsdk:"type"`
-	Metrics types.String `tfsdk:"metrics"`
-}
 
 type ExportFormatJSON struct {
 	Type    string `json:"type"`
@@ -39,11 +35,6 @@ type ExportFieldJSON struct {
 	Type       string `json:"type"`
 	ExportName string `json:"name"`
 	ExportType string `json:"exportType"`
-}
-
-type PartitionSchema struct {
-	By  types.String `tfsdk:"by"`
-	Per types.String `tfsdk:"per"`
 }
 
 type PartitionSchemaJSON struct {
@@ -91,18 +82,17 @@ type ExportFilterJSON struct {
 }
 
 type ExportShared struct {
-	Name            types.String    `tfsdk:"name"`
-	Id              types.String    `tfsdk:"id"`
-	Schedule        types.String    `tfsdk:"schedule"`
-	Workspace       types.String    `tfsdk:"workspace"`
-	Notes           types.String    `tfsdk:"notes"`
-	Currency        types.String    `tfsdk:"currency"`
-	Fields          []ExportField   `tfsdk:"fields"`
-	Format          ExportFormat    `tfsdk:"format"`
-	PartitionSchema PartitionSchema `tfsdk:"partition_schema"`
-	Range           ExportRange     `tfsdk:"range"`
-	Enabled         types.Bool      `tfsdk:"enabled"`
-	Filters         []ExportFilter  `tfsdk:"filters"`
+	Name        types.String   `tfsdk:"name"`
+	Id          types.String   `tfsdk:"id"`
+	Schedule    types.String   `tfsdk:"schedule"`
+	Workspace   types.String   `tfsdk:"workspace"`
+	Notes       types.String   `tfsdk:"notes"`
+	Currency    types.String   `tfsdk:"currency"`
+	Fields      []ExportField  `tfsdk:"fields"`
+	PartitionBy types.String   `tfsdk:"partition_by"`
+	Range       ExportRange    `tfsdk:"range"`
+	Enabled     types.Bool     `tfsdk:"enabled"`
+	Filters     []ExportFilter `tfsdk:"filters"`
 }
 
 // In Funnel the fields array and the range object are part of a query object.
@@ -113,10 +103,26 @@ type QueryJSON struct {
 }
 
 type ExportRangeJSON struct {
-	Start        string           `json:"start,omitempty"`
-	End          string           `json:"end,omitempty"`
-	RollingStart *RollingDateJSON `json:"last,omitempty"`
-	RollingEnd   *RollingDateJSON `json:"rollingEnd,omitempty"`
+	Start        string           `json:"start"`
+	End          string           `json:"end"`
+	RollingStart *RollingDateJSON `json:"last"`
+	RollingEnd   *RollingDateJSON `json:"rollingEnd"`
+}
+
+// The API merges updates into the stored export, so unset range fields are sent as null to clear them.
+func (r ExportRangeJSON) MarshalJSON() ([]byte, error) {
+	nullIfEmpty := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+	return json.Marshal(struct {
+		Start        *string          `json:"start"`
+		End          *string          `json:"end"`
+		RollingStart *RollingDateJSON `json:"last"`
+		RollingEnd   *RollingDateJSON `json:"rollingEnd"`
+	}{nullIfEmpty(r.Start), nullIfEmpty(r.End), r.RollingStart, r.RollingEnd})
 }
 
 // The base export structure in Funnel.
@@ -132,6 +138,7 @@ type ExportSharedJSON struct {
 	Currency             string              `json:"currency,omitempty"`
 	Fields               []ExportFieldJSON   `json:"-"`
 	Range                ExportRangeJSON     `json:"-"`
+	PartitionBy          string              `json:"-"`
 	PartitionSchema      PartitionSchemaJSON `json:"partitionSchema"`
 	Query                QueryJSON           `json:"query"`
 	Enabled              bool                `json:"enabled"`
@@ -237,23 +244,6 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 					},
 				},
 			},
-			"format": schema.SingleNestedAttribute{
-				MarkdownDescription: "Export format",
-				Required:            true,
-				Attributes: map[string]schema.Attribute{
-					"type": schema.StringAttribute{
-						MarkdownDescription: "Format type. One of: `parquet`, `csv`, or `tsv`.",
-						Required:            true,
-						Validators: []validator.String{
-							stringvalidator.OneOf("parquet", "csv", "tsv"),
-						},
-					},
-					"metrics": schema.StringAttribute{
-						MarkdownDescription: "Metrics format for the export",
-						Required:            true,
-					},
-				},
-			},
 			"range": schema.SingleNestedAttribute{
 				MarkdownDescription: "Export range",
 				Required:            true,
@@ -309,24 +299,14 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 					},
 				},
 			},
-			"partition_schema": schema.SingleNestedAttribute{
-				MarkdownDescription: "Partition schema for the export. **Recommended:** Use `by = \"date\"` and `per = \"month\"`.",
-				Required:            true,
-				Attributes: map[string]schema.Attribute{
-					"by": schema.StringAttribute{
-						MarkdownDescription: "Field to partition by. One of: `none` or `date`. **Recommended:** `date`",
-						Required:            true,
-						Validators: []validator.String{
-							stringvalidator.OneOf("none", "date"),
-						},
-					},
-					"per": schema.StringAttribute{
-						MarkdownDescription: "Type of partitioning. One of: `day`, `week`, `month`, `quarter`, or `year`. **Recommended:** `month`",
-						Required:            true,
-						Validators: []validator.String{
-							stringvalidator.OneOf("day", "week", "month", "quarter", "year"),
-						},
-					},
+			"partition_by": schema.StringAttribute{
+				MarkdownDescription: "How to split the export into parts. One of: `day`, `month`, `quarter`, `year`, `all` or `none`. **Recommended:** `month`\n" +
+					"  - `day`, `month`, `quarter`, `year`: Export a part per period with all data that has values for Funnel date.\n" +
+					"  - `all`: Single part. Export one single fully aggregated part with all data that has values for Funnel date (max 1M rows).\n" +
+					"  - `none`: Single part without Funnel date values. Export a single file with only data that has no values for Funnel date.",
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf("day", "month", "quarter", "year", "all", "none"),
 				},
 			},
 			"destination": destination,
@@ -411,8 +391,9 @@ func ExportFromAPI(data *ExportSharedJSON) {
 	data.Fields = data.Query.Fields
 	data.Range = data.Query.Range
 	data.Filters = ConvertFiltersFromMeld(data.Query.Where)
-	if data.Format.Type == "raw" {
-		data.Format.Type = "parquet"
+	data.PartitionBy = data.PartitionSchema.Per
+	if data.PartitionSchema.By == "none" {
+		data.PartitionBy = "none"
 	}
 	// If not provided, the Exports API sets currency to "*" to pick up the workspace default currency
 	if data.Currency == "*" {
@@ -429,10 +410,13 @@ func ExportToAPI(data *ExportSharedJSON, exportType string) {
 		Range:  data.Range,
 		Where:  ConvertFiltersToMeld(data.Filters),
 	}
-	data.Format.Headers = "safename"
-	if data.Format.Type == "parquet" {
-		data.Format.Type = "raw"
+	// partition_by is the period when partitioning by date, or "none" for data without Funnel date values.
+	data.PartitionSchema = PartitionSchemaJSON{By: "date", Per: data.PartitionBy}
+	if data.PartitionBy == "none" {
+		data.PartitionSchema = PartitionSchemaJSON{By: "none", Per: "all"}
 	}
+	// Destinations other than GCS only support CSV, GCS overrides the type afterwards.
+	data.Format = ExportFormatJSON{Type: "csv", Metrics: "export", Headers: "safename"}
 }
 
 // Splits an import ID in the format "workspace_id/export_id".

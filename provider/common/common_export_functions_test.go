@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -112,5 +113,17 @@ func TestNormalizeExportWithoutPrior(t *testing.T) {
 	}
 	if export.Filters != nil {
 		t.Errorf("expected nil filters, got %v", export.Filters)
+	}
+}
+
+func TestExportRangeJSONSendsUnsetFieldsAsNull(t *testing.T) {
+	r := ExportRangeJSON{End: "today", RollingStart: &RollingDateJSON{Periods: 3, Period: "month"}}
+	got, err := json.Marshal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := `{"start":null,"end":"today","last":{"periods":3,"period":"month"},"rollingEnd":null}`
+	if string(got) != expected {
+		t.Errorf("expected %s, got %s", expected, got)
 	}
 }

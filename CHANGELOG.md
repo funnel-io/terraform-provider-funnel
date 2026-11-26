@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - Unreleased
 
+### Changed
+
+- Replaced `partition_schema` on exports with `partition_by`. It takes the period, such as `month`, or `all` for a single part. Use `none` for a single part with only data that has no values for Funnel date, which used to be `by = "none"`.
+- Removed `format` from exports. `metrics` is always `export` and headers are always `safename`. `funnel_bigquery_export` and `funnel_snowflake_export` always export CSV, so existing exports set to TSV or Parquet switch to CSV on the next apply. `funnel_gcs_export` takes the file format as `destination.file_format`.
+- Renamed `destination.output_id_template` on `funnel_bigquery_export` to `destination.table_name_template`, matching the name in the Funnel UI.
+- `funnel_gcs_export` no longer gzips Parquet files, which are already compressed. Setting `gzip = true` with `file_format = "parquet"` is now an error.
+
+### Fixed
+
+- `partition_by` no longer accepts `week`, which the API doesn't support.
+- `gzip = false` on `funnel_gcs_export` is now respected. Before, `gzip` was always sent as `true`.
+- Removing `start`, `end`, `rolling_start` or `rolling_end` from an export's `range` now clears it in Funnel. Before, the old value was kept and every plan showed a diff.
+
 ### Removed
 
 - `funnel_measurement_export`, deprecated since 0.2.4. Remove it from your configuration and state before upgrading.

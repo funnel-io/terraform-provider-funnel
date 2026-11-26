@@ -18,7 +18,7 @@ func TestValidators(t *testing.T) {
 		{"workspace", WorkspaceIdValidator(), []string{"abcdefghij0123456789", "abc-_efghij012345678"}, []string{"short", "abcdefghij01234567890", "abcdefghij012345678!"}},
 		{"currency", CurrencyValidator(), []string{"USD", "SEK"}, []string{"usd", "US", "USDX"}},
 		{"period", PeriodValidator(), []string{"day", "year"}, []string{"days", "Day"}},
-		{"bq table", BigqueryTableTemplateValidator(), []string{"daily_export", "daily_export_{date}", "{date}"}, []string{"daily-export", "a b", "export_{}", "export_{date"}},
+		{"bq table", BigqueryTableTemplateValidator(), []string{"daily_export", "daily_export_{runDate}", "{runId}"}, []string{"daily-export", "a b", "export_{}", "export_{runId"}},
 		{"bq dataset", BigqueryDatasetIdValidator(), []string{"my_dataset", "Dataset1"}, []string{"my-dataset", "my.dataset", ""}},
 		{"bq project", BigqueryProjectIdValidator(), []string{"my-project-123", "example.com:my-project"}, []string{"My-Project", "1project", "proj-", "abc"}},
 		{"sf identifier", SnowflakeIdentifierValidator(), []string{"MARKETING_DB", "_tmp", "tbl$1"}, []string{"1DB", "MY-DB", "my db", "db.schema"}},

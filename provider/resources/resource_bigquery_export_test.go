@@ -18,19 +18,15 @@ func TestBigqueryExportModel_Validation(t *testing.T) {
 		Name:      types.StringValue("test-export"),
 		Schedule:  types.StringValue("0 12 * * *"),
 		Workspace: types.StringValue("test-workspace"),
-		Format: common.ExportFormat{
-			Type:    types.StringValue("csv"),
-			Metrics: types.StringValue("export"),
-		},
 	}
 
 	// Test creating a BigQuery export model with basic required fields
 	model := BigqueryResourceModel{
 		ExportShared: sharedData,
 		Destination: ExportBigqueryDestination{
-			OutputIdTemplate: types.StringValue("test_table"),
-			DatasetId:        types.StringValue("test_dataset"),
-			ProjectId:        types.StringValue("test_project"),
+			TableNameTemplate: types.StringValue("test_table"),
+			DatasetId:         types.StringValue("test_dataset"),
+			ProjectId:         types.StringValue("test_project"),
 		},
 	}
 
@@ -74,18 +70,14 @@ func TestBigqueryExportModel_WithFields(t *testing.T) {
 		Schedule:  types.StringValue("0 6 * * *"),
 		Workspace: types.StringValue("test-workspace"),
 		Fields:    fields,
-		Format: common.ExportFormat{
-			Type:    types.StringValue("csv"),
-			Metrics: types.StringValue("export"),
-		},
 	}
 
 	model := BigqueryResourceModel{
 		ExportShared: sharedData,
 		Destination: ExportBigqueryDestination{
-			OutputIdTemplate: types.StringValue("test_table_fields"),
-			DatasetId:        types.StringValue("test_dataset"),
-			ProjectId:        types.StringValue("test_project"),
+			TableNameTemplate: types.StringValue("test_table_fields"),
+			DatasetId:         types.StringValue("test_dataset"),
+			ProjectId:         types.StringValue("test_project"),
 		},
 	}
 
@@ -153,14 +145,7 @@ func TestBigqueryResource_Create_Conflict409(t *testing.T) {
 				ExportType: types.StringValue("dimension"),
 			},
 		},
-		Format: common.ExportFormat{
-			Type:    types.StringValue("csv"),
-			Metrics: types.StringValue("export"),
-		},
-		PartitionSchema: common.PartitionSchema{
-			By:  types.StringValue("date"),
-			Per: types.StringValue("day"),
-		},
+		PartitionBy: types.StringValue("day"),
 		Range: common.ExportRange{
 			Start: types.StringValue("2024-01-01"),
 			End:   types.StringValue("2024-01-07"),
@@ -171,9 +156,9 @@ func TestBigqueryResource_Create_Conflict409(t *testing.T) {
 	data := BigqueryResourceModel{
 		ExportShared: sharedData,
 		Destination: ExportBigqueryDestination{
-			OutputIdTemplate: types.StringValue("test_table"),
-			DatasetId:        types.StringValue("test_dataset"),
-			ProjectId:        types.StringValue("test_project"),
+			TableNameTemplate: types.StringValue("test_table"),
+			DatasetId:         types.StringValue("test_dataset"),
+			ProjectId:         types.StringValue("test_project"),
 		},
 	}
 

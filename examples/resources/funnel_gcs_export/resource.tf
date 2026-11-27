@@ -1,4 +1,4 @@
-# Fetch export fields
+# Look up the fields to export
 data "funnel_export_field" "date" {
   workspace = var.workspace_id
   id        = "date"

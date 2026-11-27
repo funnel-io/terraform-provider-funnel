@@ -45,7 +45,7 @@ func (d *ExportFieldDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *ExportFieldDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Export field data source for BigQuery exports. Look up a field by workspace and name; id and type come from the API. Optionally override name and export_type for the export.",
+		MarkdownDescription: "Reads a Funnel field to use in the `fields` attribute of an export resource. Optionally override the column name and type with `export_name` and `export_type`.",
 
 		Attributes: map[string]schema.Attribute{
 			"workspace": schema.StringAttribute{
@@ -61,15 +61,15 @@ func (d *ExportFieldDataSource) Schema(ctx context.Context, req datasource.Schem
 				Computed:            true,
 			},
 			"export_name": schema.StringAttribute{
-				MarkdownDescription: "Override name for the export (defaults to field name)",
+				MarkdownDescription: "Column name in the export. Defaults to the field name.",
 				Optional:            true,
 			},
 			"export_type": schema.StringAttribute{
-				MarkdownDescription: "Override export type for this field",
+				MarkdownDescription: "Column type in the export. Defaults to the field type.",
 				Optional:            true,
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "Funnel field type (from API)",
+				MarkdownDescription: "Funnel field type",
 				Computed:            true,
 			},
 		},

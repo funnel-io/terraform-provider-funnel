@@ -1,4 +1,4 @@
-# Fetch export fields
+# Look up the fields to export
 data "funnel_export_field" "date" {
   workspace = var.workspace_id
   id        = "date"
@@ -30,7 +30,7 @@ resource "funnel_bigquery_export" "basic" {
     project_id          = "my-gcp-project"
     dataset_id          = "funnel_marketing_data"
     table_name_template = "funnel_export_{workspaceId}"
-    # If you don't provide a "credential_id" a Funnel service account will be used.
+    # If `credential_id` is not set, a Funnel service account is used.
     credential_id = var.bigquery_credential_id
   }
 

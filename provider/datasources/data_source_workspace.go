@@ -45,7 +45,7 @@ func (d *WorkspaceDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *WorkspaceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Workspace data source",
+		MarkdownDescription: "Reads an existing Funnel workspace.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

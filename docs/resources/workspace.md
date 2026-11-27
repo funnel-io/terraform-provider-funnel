@@ -3,12 +3,12 @@
 page_title: "funnel_workspace Resource - funnel"
 subcategory: ""
 description: |-
-  Workspace resource
+  Manages a Funnel workspace.
 ---
 
 # funnel_workspace (Resource)
 
-Workspace resource
+Manages a Funnel workspace.
 
 ## Example Usage
 

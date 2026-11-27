@@ -65,7 +65,7 @@ func (r *BigqueryResource) Schema(ctx context.Context, req resource.SchemaReques
 // Shared with the BigQuery export data source.
 func BigqueryExportSchema() schema.Schema {
 	return common.GetExportSchema(schema.SingleNestedAttribute{
-		MarkdownDescription: "Bigquery destination table",
+		MarkdownDescription: "BigQuery destination table.",
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"table_name_template": schema.StringAttribute{
@@ -90,7 +90,7 @@ func BigqueryExportSchema() schema.Schema {
 				},
 			},
 			"credential_id": schema.StringAttribute{
-				MarkdownDescription: "The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account. Must not be empty if set.",
+				MarkdownDescription: "The ID of the Funnel credential used to authenticate with BigQuery. The credential must be shared with the System user. See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#exports). If not set, the export uses a Funnel service account. Must not be empty if set.",
 				Optional:            true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),

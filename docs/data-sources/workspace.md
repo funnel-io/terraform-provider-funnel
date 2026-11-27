@@ -3,12 +3,12 @@
 page_title: "funnel_workspace Data Source - funnel"
 subcategory: ""
 description: |-
-  Workspace data source
+  Reads an existing Funnel workspace.
 ---
 
 # funnel_workspace (Data Source)
 
-Workspace data source
+Reads an existing Funnel workspace.
 
 ## Example Usage
 

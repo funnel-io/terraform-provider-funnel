@@ -19,7 +19,7 @@ Each run only re-exports months with data that has changed in Funnel since the l
 ## Example Usage
 
 ```terraform
-# Fetch export fields
+# Look up the fields to export
 data "funnel_export_field" "date" {
   workspace = var.workspace_id
   id        = "date"
@@ -51,7 +51,7 @@ resource "funnel_bigquery_export" "basic" {
     project_id          = "my-gcp-project"
     dataset_id          = "funnel_marketing_data"
     table_name_template = "funnel_export_{workspaceId}"
-    # If you don't provide a "credential_id" a Funnel service account will be used.
+    # If `credential_id` is not set, a Funnel service account is used.
     credential_id = var.bigquery_credential_id
   }
 
@@ -79,8 +79,8 @@ resource "funnel_bigquery_export" "basic" {
 
 ### Required
 
-- `destination` (Attributes) Bigquery destination table (see [below for nested schema](#nestedatt--destination))
-- `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
+- `destination` (Attributes) BigQuery destination table. (see [below for nested schema](#nestedatt--destination))
+- `fields` (Attributes List) Fields to export. Look them up with the `funnel_export_field` data source. (see [below for nested schema](#nestedatt--fields))
 - `name` (String) Export name. Must not be empty.
 - `partition_by` (String) How to split the export into parts. One of: `day`, `month`, `year`, `all` or `none`. **Recommended:** `month`
   - `day`, `month`, `year`: Export a part per period with all data that has values for Funnel date.
@@ -95,7 +95,7 @@ resource "funnel_bigquery_export" "basic" {
 - `currency` (String) Export currency as an uppercase ISO 4217 code, e.g. `USD` or `EUR`. If not set, the workspace default currency is used.
 - `enabled` (Boolean) Whether the export is enabled. Defaults to `false`.
 - `filters` (Attributes List) Export filters (see [below for nested schema](#nestedatt--filters))
-- `notes` (String) Export notes that can be seen in the Funnel app
+- `notes` (String) Export notes. Shown in the Funnel app.
 
 ### Read-Only
 
@@ -112,7 +112,7 @@ Required:
 
 Optional:
 
-- `credential_id` (String) The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account. Must not be empty if set.
+- `credential_id` (String) The ID of the Funnel credential used to authenticate with BigQuery. The credential must be shared with the System user. See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#exports). If not set, the export uses a Funnel service account. Must not be empty if set.
 
 
 <a id="nestedatt--fields"></a>
@@ -120,10 +120,10 @@ Optional:
 
 Optional:
 
-- `export_name` (String) Export column name (optional override)
-- `export_type` (String) Export type for the field (optional override)
-- `id` (String) Field ID fetched from data source export_field
-- `type` (String) Field type fetched from data source export_field
+- `export_name` (String) Column name in the export.
+- `export_type` (String) Column type in the export.
+- `id` (String) Field ID, from the `funnel_export_field` data source.
+- `type` (String) Field type, from the `funnel_export_field` data source.
 
 
 <a id="nestedatt--range"></a>

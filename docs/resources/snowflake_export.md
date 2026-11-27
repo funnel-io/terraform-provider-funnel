@@ -4,19 +4,19 @@ page_title: "funnel_snowflake_export Resource - funnel"
 subcategory: ""
 description: |-
   Exports data from a Funnel workspace to a table in Snowflake on a schedule.
-  Authentication is handled through a Funnel credential referenced by credential_id. The credential ID can be found on the My Credentials page in Funnel. The credential can be either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential.
+  Authentication is handled through a Funnel credential referenced by credential_id. See the Credentials guide for how to share it with the System user and find its ID. The credential can be either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential.
 ---
 
 # funnel_snowflake_export (Resource)
 
 Exports data from a Funnel workspace to a table in Snowflake on a schedule.
 
-Authentication is handled through a Funnel credential referenced by `credential_id`. The credential ID can be found on the **My Credentials** page in Funnel. The credential can be either a **Snowflake upload (PAT)** or a **Snowflake upload (Private Key)** credential.
+Authentication is handled through a Funnel credential referenced by `credential_id`. See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#exports) for how to share it with the System user and find its ID. The credential can be either a **Snowflake upload (PAT)** or a **Snowflake upload (Private Key)** credential.
 
 ## Example Usage
 
 ```terraform
-# Fetch export fields
+# Look up the fields to export
 data "funnel_export_field" "date" {
   workspace = var.workspace_id
   id        = "date"
@@ -76,8 +76,8 @@ resource "funnel_snowflake_export" "basic" {
 
 ### Required
 
-- `destination` (Attributes) Snowflake destination table (see [below for nested schema](#nestedatt--destination))
-- `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
+- `destination` (Attributes) Snowflake destination table. (see [below for nested schema](#nestedatt--destination))
+- `fields` (Attributes List) Fields to export. Look them up with the `funnel_export_field` data source. (see [below for nested schema](#nestedatt--fields))
 - `name` (String) Export name. Must not be empty.
 - `partition_by` (String) How to split the export into parts. One of: `day`, `month`, `year`, `all` or `none`. **Recommended:** `month`
   - `day`, `month`, `year`: Export a part per period with all data that has values for Funnel date.
@@ -92,7 +92,7 @@ resource "funnel_snowflake_export" "basic" {
 - `currency` (String) Export currency as an uppercase ISO 4217 code, e.g. `USD` or `EUR`. If not set, the workspace default currency is used.
 - `enabled` (Boolean) Whether the export is enabled. Defaults to `false`.
 - `filters` (Attributes List) Export filters (see [below for nested schema](#nestedatt--filters))
-- `notes` (String) Export notes that can be seen in the Funnel app
+- `notes` (String) Export notes. Shown in the Funnel app.
 
 ### Read-Only
 
@@ -104,7 +104,7 @@ resource "funnel_snowflake_export" "basic" {
 Required:
 
 - `account_locator` (String) Snowflake Account Identifier. Account Locator or Organisation Name and Account Name separated by a dash (e.g. `funnel-snowflake`). May contain letters, digits, `.`, `-` and `_`, and must start with a letter or digit.
-- `credential_id` (String) The ID of the Funnel credential used to authenticate with Snowflake, found on the My Credentials page in Funnel. Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must have been shared with the System user in Funnel before it can be used here.
+- `credential_id` (String) The ID of the Funnel credential used to authenticate with Snowflake, Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must be shared with the System user. See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#exports).
 - `database` (String) Database name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
 - `schema_name` (String) Schema name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
 - `table_name` (String) Table name to export data to. Must be 1-255 characters, start with a letter or underscore and contain only letters, digits, underscores and `$` (unquoted Snowflake identifier).
@@ -115,10 +115,10 @@ Required:
 
 Optional:
 
-- `export_name` (String) Export column name (optional override)
-- `export_type` (String) Export type for the field (optional override)
-- `id` (String) Field ID fetched from data source export_field
-- `type` (String) Field type fetched from data source export_field
+- `export_name` (String) Column name in the export.
+- `export_type` (String) Column type in the export.
+- `id` (String) Field ID, from the `funnel_export_field` data source.
+- `type` (String) Field type, from the `funnel_export_field` data source.
 
 
 <a id="nestedatt--range"></a>

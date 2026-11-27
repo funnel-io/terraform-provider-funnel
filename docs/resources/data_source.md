@@ -9,33 +9,20 @@ description: |-
 
 Manages a Funnel data source, which represents a connection to an advertising platform or analytics system. Data sources pull data from external platforms into Funnel for aggregation and analysis.
 
-~> **Note:** Before creating a data source, ensure that you have shared the necessary credential with the System user in Funnel.
+-> **Note:** `funnel_data_source` is a resource that manages a data source in Funnel. To read an existing Funnel data source, use the `funnel_data_source` data source.
 
-## Data source credentials
-
-A credential for the platform you are setting up has to be shared to the Terraform System user that the Funnel `CLIENT_ID` is connected to.
-
-### To see the credentials shared to the System user
-
-Go into Funnel and navigate to your Subscription overview and into the Users section. Press the System users tab and you'll see all your System users.
-Click on the name of the one you're using for Terraform and it will load a list of the shared platform credentials.
-Copy the Credential ID for your platform into the `credential_id` field for your data source.
-
-### To share a credential you own to the System user
-
-Go into Funnel and navigate to My credentials in your profile menu.
-Click on the credential you want to share and press the Share button. Click the Share button and choose the Terraform System user you're using with Terraform.
+~> **Note:** Before creating this resource, share the platform credential with the System user in Funnel. See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#data-sources).
 
 ## Data source templates
 
 The data from the platform you'll download into Funnel when creating a data source is defined by the template provided. In Funnel there are built in templates but you can also create your own custom ones.
 Go into Funnel and navigate to your Subscription overview and the templates section and all templates are listed there. The default view is a list of your custom templates.
-Click on the Funnel templates button to see the built in templates. Click on a template and copy the Template ID for your platform into the `template_id` field for your data source.
+Click on the Funnel templates button to see the built in templates. Click on a template and set the `template_id` argument to the Template ID for your platform.
 
-## Data source remote ids and remote structs
+## Remote ID and remote struct
 
-For how `remote_struct` should be formatted for each data source type go to the guide called [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct).
-Copy the remote ID for your platform into the `remote_id` field for your data source or create a `remote_struct` field that follows the guide for your platform.
+The [data_source_remote_struct](/providers/funnel-io/funnel/latest/docs/guides/data_source_remote_struct) guide lists which of `remote_id` or `remote_struct` each `type` uses, and the format of `remote_struct`.
+Set the argument your platform uses. The two are mutually exclusive.
 
 ## Example Usage
 
@@ -98,7 +85,7 @@ resource "funnel_data_source" "tiktok_custom" {
 
 ### Optional
 
-- `credential_id` (String) The ID of the credential used to authenticate with the external platform. This references a credential that must have already been created in Funnel. The credential must have been shared with the System user in Funnel before it can be used here.
+- `credential_id` (String) The ID of the credential used to authenticate with the external platform. The credential must be shared with the System user. See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#data-sources).
 - `download_disabled` (Boolean) When set to `true`, prevents Funnel from downloading data from this data source. Useful for temporarily pausing data collection without deleting the data source configuration. Defaults to `false`.
 - `exclude_data_from_funnel` (Boolean) When set to `true`, excludes data from this source from being included in Funnel aggregations and queries. The data source will still download and store data, but it won't be available for analysis. Could be useful if you want to validate the data before it is used in Funnel. Defaults to `false`.
 - `is_demo` (Boolean) When set to `true`, the data source produces demo (test) data in Funnel instead of connecting to the external platform. Defaults to `false`. Changing this forces a new resource to be created.

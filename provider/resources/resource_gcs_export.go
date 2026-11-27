@@ -68,7 +68,7 @@ func (r *GCSResource) Metadata(ctx context.Context, req resource.MetadataRequest
 
 func (r *GCSResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = common.GetExportSchema(schema.SingleNestedAttribute{
-		MarkdownDescription: "GCS destination",
+		MarkdownDescription: "Google Cloud Storage destination.",
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"output_id_template": schema.StringAttribute{
@@ -98,7 +98,7 @@ func (r *GCSResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				Computed:            true,
 			},
 			"credentials_ref": schema.StringAttribute{
-				MarkdownDescription: "Reference to GCS credentials secret",
+				MarkdownDescription: "Reference to the Funnel credential used to authenticate with Google Cloud Storage.",
 				Optional:            true,
 			},
 			"file_format": schema.StringAttribute{
@@ -109,7 +109,7 @@ func (r *GCSResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				},
 			},
 		},
-	}, "GCS export")
+	}, "Exports data from a Funnel workspace to files in Google Cloud Storage on a schedule.")
 }
 
 // Parquet is already compressed, so the API never gzips it.

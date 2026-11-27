@@ -300,13 +300,13 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 				},
 			},
 			"partition_by": schema.StringAttribute{
-				MarkdownDescription: "How to split the export into parts. One of: `day`, `month`, `quarter`, `year`, `all` or `none`. **Recommended:** `month`\n" +
-					"  - `day`, `month`, `quarter`, `year`: Export a part per period with all data that has values for Funnel date.\n" +
+				MarkdownDescription: "How to split the export into parts. One of: `day`, `month`, `year`, `all` or `none`. **Recommended:** `month`\n" +
+					"  - `day`, `month`, `year`: Export a part per period with all data that has values for Funnel date.\n" +
 					"  - `all`: Single part. Export one single fully aggregated part with all data that has values for Funnel date (max 1M rows).\n" +
 					"  - `none`: Single part without Funnel date values. Export a single file with only data that has no values for Funnel date.",
 				Required: true,
 				Validators: []validator.String{
-					stringvalidator.OneOf("day", "month", "quarter", "year", "all", "none"),
+					stringvalidator.OneOf("day", "month", "year", "all", "none"),
 				},
 			},
 			"destination": destination,

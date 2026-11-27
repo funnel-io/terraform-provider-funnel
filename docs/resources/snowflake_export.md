@@ -79,8 +79,8 @@ resource "funnel_snowflake_export" "basic" {
 - `destination` (Attributes) Snowflake destination table (see [below for nested schema](#nestedatt--destination))
 - `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
 - `name` (String) Export name. Must not be empty.
-- `partition_by` (String) How to split the export into parts. One of: `day`, `month`, `quarter`, `year`, `all` or `none`. **Recommended:** `month`
-  - `day`, `month`, `quarter`, `year`: Export a part per period with all data that has values for Funnel date.
+- `partition_by` (String) How to split the export into parts. One of: `day`, `month`, `year`, `all` or `none`. **Recommended:** `month`
+  - `day`, `month`, `year`: Export a part per period with all data that has values for Funnel date.
   - `all`: Single part. Export one single fully aggregated part with all data that has values for Funnel date (max 1M rows).
   - `none`: Single part without Funnel date values. Export a single file with only data that has no values for Funnel date.
 - `range` (Attributes) Export range (see [below for nested schema](#nestedatt--range))

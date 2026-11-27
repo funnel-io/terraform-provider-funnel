@@ -59,7 +59,12 @@ func (r *BigqueryResource) Metadata(ctx context.Context, req resource.MetadataRe
 }
 
 func (r *BigqueryResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = common.GetExportSchema(schema.SingleNestedAttribute{
+	resp.Schema = BigqueryExportSchema()
+}
+
+// Shared with the BigQuery export data source.
+func BigqueryExportSchema() schema.Schema {
+	return common.GetExportSchema(schema.SingleNestedAttribute{
 		MarkdownDescription: "Bigquery destination table",
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
@@ -166,7 +171,7 @@ func (r *BigqueryResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	export, err := getBigqueryExport(
+	export, err := GetBigqueryExport(
 		ctx,
 		r.config,
 		data.Workspace.ValueString(),
@@ -227,7 +232,7 @@ func (r *BigqueryResource) ImportState(ctx context.Context, req resource.ImportS
 		return
 	}
 
-	export, err := getBigqueryExport(ctx, r.config, workspaceID, exportID)
+	export, err := GetBigqueryExport(ctx, r.config, workspaceID, exportID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Importing BigQuery Export",
@@ -273,7 +278,7 @@ func (r *BigqueryResource) Delete(ctx context.Context, req resource.DeleteReques
 	}
 }
 
-func getBigqueryExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) (*BigqueryResourceModel, error) {
+func GetBigqueryExport(ctx context.Context, config *common.FunnelProviderModel, accountId string, id string) (*BigqueryResourceModel, error) {
 	respObj, err := funnel.GetWorkspaceEntity[FunnelBigqueryJSON](ctx, "exports", config, accountId, id)
 	if funnel.IsNotFound(err) {
 		return nil, nil

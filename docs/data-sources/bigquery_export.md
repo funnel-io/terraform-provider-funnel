@@ -44,12 +44,12 @@ resource "funnel_bigquery_export" "copy" {
 ### Read-Only
 
 - `currency` (String) Export currency as an uppercase ISO 4217 code, e.g. `USD` or `EUR`. If not set, the workspace default currency is used.
-- `destination` (Attributes) Bigquery destination table (see [below for nested schema](#nestedatt--destination))
+- `destination` (Attributes) BigQuery destination table. (see [below for nested schema](#nestedatt--destination))
 - `enabled` (Boolean) Whether the export is enabled. Defaults to `false`.
-- `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
+- `fields` (Attributes List) Fields to export. Look them up with the `funnel_export_field` data source. (see [below for nested schema](#nestedatt--fields))
 - `filters` (Attributes List) Export filters (see [below for nested schema](#nestedatt--filters))
 - `name` (String) Export name. Must not be empty.
-- `notes` (String) Export notes that can be seen in the Funnel app
+- `notes` (String) Export notes. Shown in the Funnel app.
 - `partition_by` (String) How to split the export into parts. One of: `day`, `month`, `year`, `all` or `none`. **Recommended:** `month`
   - `day`, `month`, `year`: Export a part per period with all data that has values for Funnel date.
   - `all`: Single part. Export one single fully aggregated part with all data that has values for Funnel date (max 1M rows).
@@ -62,7 +62,7 @@ resource "funnel_bigquery_export" "copy" {
 
 Read-Only:
 
-- `credential_id` (String) The ID of the Funnel credential used to authenticate with BigQuery. The credential must have been shared with the System user in Funnel before it can be used here. If not set, the export uses a Funnel service account. Must not be empty if set.
+- `credential_id` (String) The ID of the Funnel credential used to authenticate with BigQuery. The credential must be shared with the System user. See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#exports). If not set, the export uses a Funnel service account. Must not be empty if set.
 - `dataset_id` (String) BigQuery dataset ID. Must be 1-1024 characters and contain only letters, digits and underscores.
 - `project_id` (String) BigQuery project ID. Must be 6-30 lowercase letters, digits or hyphens, start with a letter and not end with a hyphen. Legacy domain-scoped IDs such as `example.com:my-project` are also accepted.
 - `table_name_template` (String) BigQuery table name for the export, using letters, digits and underscores, such as `funnel_export`. You can optionally add the placeholders `{runId}`, `{runDate}`, `{runHour}`, `{workspaceId}` or `{dataShareId}`, for example to make the name unique per workspace.
@@ -73,10 +73,10 @@ Read-Only:
 
 Read-Only:
 
-- `export_name` (String) Export column name (optional override)
-- `export_type` (String) Export type for the field (optional override)
-- `id` (String) Field ID fetched from data source export_field
-- `type` (String) Field type fetched from data source export_field
+- `export_name` (String) Column name in the export.
+- `export_type` (String) Column type in the export.
+- `id` (String) Field ID, from the `funnel_export_field` data source.
+- `type` (String) Field type, from the `funnel_export_field` data source.
 
 
 <a id="nestedatt--filters"></a>

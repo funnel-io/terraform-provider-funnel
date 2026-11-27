@@ -174,7 +174,7 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 				},
 			},
 			"notes": schema.StringAttribute{
-				MarkdownDescription: "Export notes that can be seen in the Funnel app",
+				MarkdownDescription: "Export notes. Shown in the Funnel app.",
 				Optional:            true,
 			},
 			"currency": schema.StringAttribute{
@@ -185,24 +185,24 @@ func GetExportSchema(destination schema.Attribute, type_description string) sche
 				},
 			},
 			"fields": schema.ListNestedAttribute{
-				MarkdownDescription: "Export fields as a list of fields from export_field data source",
+				MarkdownDescription: "Fields to export. Look them up with the `funnel_export_field` data source.",
 				Required:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							MarkdownDescription: "Field ID fetched from data source export_field",
+							MarkdownDescription: "Field ID, from the `funnel_export_field` data source.",
 							Optional:            true,
 						},
 						"type": schema.StringAttribute{
-							MarkdownDescription: "Field type fetched from data source export_field",
+							MarkdownDescription: "Field type, from the `funnel_export_field` data source.",
 							Optional:            true,
 						},
 						"export_name": schema.StringAttribute{
-							MarkdownDescription: "Export column name (optional override)",
+							MarkdownDescription: "Column name in the export.",
 							Optional:            true,
 						},
 						"export_type": schema.StringAttribute{
-							MarkdownDescription: "Export type for the field (optional override)",
+							MarkdownDescription: "Column type in the export.",
 							Optional:            true,
 						},
 					},

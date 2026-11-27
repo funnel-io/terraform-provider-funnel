@@ -5,11 +5,11 @@ subcategory: "Data source setup"
 
 # Data source `remote_struct` for each data source type
 
-Each source type (e.g., `facebookads` and `adwords`) have a defined way to configure which data you will download from the platforms. Some platforms you only need to provide `remote_id` but for some platforms you will need to provide a JSON encoded string with the fields that are specified below.
+Each `type` of the `funnel_data_source` resource (e.g., `facebookads` and `adwords`) identifies the account to download data from with either the `remote_id` argument or the `remote_struct` argument, a JSON-encoded string with the fields specified below, for example set with `jsonencode()`.
 
-Required fields for the `remote_struct` are marked with a "*".
+Required fields in `remote_struct` are marked with a "*".
 
-## Data source types configured with "remote_id"
+## Types configured with `remote_id`
 
 ### Facebook Ads (`facebookads`)
 
@@ -87,7 +87,7 @@ Pattern: `^accounts/[0-9]+$`
 
 The ad account ID
 
-## Data source types configured with "remote_struct"
+## Types configured with `remote_struct`
 
 ### Google Ads (`adwords`)
 
@@ -131,6 +131,6 @@ Remote ID formula: `{{sha256_16 channelId}}`
 
 Remote ID formula: `{{profileId}}`
 
-## Data source types that are not supported
+## Types that are not supported
 
 - Google Sheets (`googlesheets`)

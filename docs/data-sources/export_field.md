@@ -3,12 +3,12 @@
 page_title: "funnel_export_field Data Source - funnel"
 subcategory: ""
 description: |-
-  Export field data source for BigQuery exports. Look up a field by workspace and name; id and type come from the API. Optionally override name and export_type for the export.
+  Reads a Funnel field to use in the fields attribute of an export resource. Optionally override the column name and type with export_name and export_type.
 ---
 
 # funnel_export_field (Data Source)
 
-Export field data source for BigQuery exports. Look up a field by workspace and name; id and type come from the API. Optionally override name and export_type for the export.
+Reads a Funnel field to use in the `fields` attribute of an export resource. Optionally override the column name and type with `export_name` and `export_type`.
 
 ## Example Usage
 
@@ -59,10 +59,10 @@ data "funnel_export_field" "cost_custom" {
 
 ### Optional
 
-- `export_name` (String) Override name for the export (defaults to field name)
-- `export_type` (String) Override export type for this field
+- `export_name` (String) Column name in the export. Defaults to the field name.
+- `export_type` (String) Column type in the export. Defaults to the field type.
 
 ### Read-Only
 
 - `name` (String) Funnel field name that is seen in the Funnel app
-- `type` (String) Funnel field type (from API)
+- `type` (String) Funnel field type

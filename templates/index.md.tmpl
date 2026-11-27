@@ -7,39 +7,41 @@ description: |-
 
 # Funnel Provider
 
-The changelog for this provider can be found here: <https://github.com/funnel-io/terraform-provider-funnel/releases>.
+~> **Beta:** The Funnel provider is in beta. Resources and schemas may change between releases, so pin the provider version and read the [changelog](https://github.com/funnel-io/terraform-provider-funnel/blob/main/CHANGELOG.md) before upgrading.
+
+-> **Funnel as Code:** Read the [Funnel as Code](https://help.funnel.io/en/articles/14884773-funnel-as-code) knowledge base article for an introduction to managing Funnel with Terraform.
 
 ## Example Usage
 
-### Creating a Funnel provider
+### Configuring the provider
 
 {{ tffile "examples/provider/provider.tf" }}
 
 ## Authentication
 
-Get the System user `client_id` and `client_secret` from Funnel for your subscription.
+The provider authenticates with the `client_id` and `client_secret` of a Funnel System user.
 In Funnel go to "Subscription overview" in the right top corner, select "Authentication" and create a new System user at the bottom of the page.
 
 ## Subscriptions, workspaces and resource IDs
 
 The Funnel provider requires a `subscription_id` to be set in the provider configuration. Yours can be found in the URL if you go into the Subscription overview in the Funnel app.
-The URL will look something like this: `https://app.funnel.io/#/subscription/SUBSCRIPTION_ID/overview`.
+The URL will look something like this: `https://app.funnel.io/subscription/SUBSCRIPTION_ID/overview`.
 
-Funnel workspaces can be managed with the `funnel_workspace` resource.
-If you already have a workspace, get its ID from the URL and import it with `terraform import funnel_workspace.<name> <workspace_id>`. The URL looks something like this: `https://app.funnel.io/workspaces/WORKSPACE_ID`.
+Funnel workspaces are managed with the `funnel_workspace` resource.
+To bring an existing workspace under Terraform management, get its ID from the URL and import it with `terraform import funnel_workspace.<name> <workspace_id>`. The URL looks something like this: `https://app.funnel.io/workspaces/WORKSPACE_ID`.
 
-Get resource IDs from the Funnel app as well. Above the table listing of resources there is a "Choose column" button where you can add the column "ID" that contains the resource IDs.
-You could also go into the resource you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/workspaces/WORKSPACE_ID/RESOURCE_TYPE/RESOURCE_ID`.
+Get the IDs of existing Funnel objects from the Funnel app as well. Above the table listing of resources there is a "Choose column" button where you can add the column "ID" that contains the resource IDs.
+You can also open the object you want to manage with Terraform and get the ID from the URL. The URL will look something like this: `https://app.funnel.io/workspaces/WORKSPACE_ID/<object path>/OBJECT_ID`. For a BigQuery export it's `https://app.funnel.io/workspaces/WORKSPACE_ID/destinations/bigquery/EXPORT_ID`.
 
 ## Exports
 
-Exports are created with the `funnel_<type>_export` resource. The available types are `bigquery`, `snowflake`, and `gcs`. All the fields outside of the `destination` block are shared with the other export types.
+Each export destination has its own resource type: `funnel_bigquery_export`, `funnel_snowflake_export`, and `funnel_gcs_export`. All arguments except the `destination` attribute are shared between the export resources.
 
 ## Fields
 
-The data source `funnel_export_field` can be used to get the fields for an export. Lists of fields are then used in the `fields` block of the export resources.
+Use the `funnel_export_field` data source to look up a field for an export. Reference these data sources in the `fields` attribute of the export resources.
 
-The "export_name" will be "Date" as fallback because that's the name of the field in Funnel:
+If `export_name` is not set, it defaults to the field's name in Funnel, here `Date`:
 ```hcl
 data "funnel_export_field" "date_field" {
   workspace   = local.workspace_id
@@ -47,7 +49,7 @@ data "funnel_export_field" "date_field" {
 }
 ```
 
-Setting a new "export_name" for the field to use as the column name in the export:
+Set `export_name` to override the column name in the export:
 ```hcl
 data "funnel_export_field" "adtriba_brand_field" {
   workspace   = local.workspace_id
@@ -56,7 +58,7 @@ data "funnel_export_field" "adtriba_brand_field" {
 }
 ```
 
-Setting both a new "export_name" and "export_type" for the field to use as the column name and type in the export:
+Set both `export_name` and `export_type` to override the column name and type in the export:
 ```hcl
 data "funnel_export_field" "clicks_field" {
   workspace   = local.workspace_id
@@ -68,7 +70,7 @@ data "funnel_export_field" "clicks_field" {
 
 ## Filters
 
-Filters are used to filter the data that is exported. They are used in the `filters` block of the export resources.
+Filters are used to filter the data that is exported. They are set in the `filters` attribute of the export resources.
 Example of an AND filter of three filters on three fields:
 
 ```hcl
@@ -108,29 +110,29 @@ All entries in `filters` must match for a row to be exported. The example above 
 
 ### Conflicting resources
 
-If you receive a `409 Conflict` error when creating resources it's because the target export conflicts with another one.
-The error message will contain information about which resource is conflicting. For a BigQuery export an error would be caused by two exports targeting the same dataset and table.
+If `terraform apply` fails with a `409 Conflict` error, the export conflicts with an existing one.
+The error message says which export it conflicts with. For a BigQuery export an error would be caused by two exports targeting the same dataset and table.
 
-## Flexpoints needed
+### Flexpoints needed
 
-If you receive a `402 Payment Required` error when creating resources it's because your subscription does not have enough Flexpoints to create the resource.
+If `terraform apply` fails with a `402 Payment Required` error, your subscription does not have enough Flexpoints to create the resource.
 Go into the Funnel app and into the Flexpoints Usage in the Subscription overview to see how many Flexpoints you have and what resources consume Flexpoints.
 
-## Outdated Funnel Terraform Provider version
+### Outdated provider version
 
-If you receive an error like the one below when running `terraform plan` or `terraform apply`, please upgrade your Funnel Terraform Provider to the latest version.
+If you receive an error like the one below when running `terraform plan` or `terraform apply`, upgrade the provider to the latest version by updating its version constraint and running `terraform init -upgrade`.
 `Unable to read workspaces: terraform-provider-funnel version is too old. Minimum required: 0.1.0`
 
-## 429 Too Many Requests error
+### 429 Too Many Requests error
 
-If you receive a `429 Too Many Requests` error when making API calls, it means that you have exceeded the rate limit for the Funnel API.
+If `terraform plan` or `terraform apply` fails with a `429 Too Many Requests` error, the provider has exceeded the Funnel API rate limit.
 If it happens frequently, consider contacting Funnel support to discuss your use case.
 
 ## Import command
 
 Workspaces are imported by `<workspace_id>`. All other resources are imported by `<workspace_id>/<resource_id>`.
 
-Run the following command to import exports into your Terraform state:
+To import an existing export into your Terraform state, run:
 
 ```bash
 terraform import funnel_<type>_export.<name> <workspace_id>/<export_id>

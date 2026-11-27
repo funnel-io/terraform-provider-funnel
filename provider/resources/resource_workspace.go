@@ -44,7 +44,7 @@ func (r *WorkspaceResource) Metadata(ctx context.Context, req resource.MetadataR
 
 func (r *WorkspaceResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Workspace resource",
+		MarkdownDescription: "Manages a Funnel workspace.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Funnel workspace ID",

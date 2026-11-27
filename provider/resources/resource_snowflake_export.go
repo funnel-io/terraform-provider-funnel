@@ -63,11 +63,11 @@ func (r *SnowflakeResource) Metadata(ctx context.Context, req resource.MetadataR
 func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	type_description := "Exports data from a Funnel workspace to a table in Snowflake on a schedule." + "\n\n" +
 		"Authentication is handled through a Funnel credential referenced by `credential_id`. " +
-		"The credential ID can be found on the **My Credentials** page in Funnel. " +
+		"See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#exports) for how to share it with the System user and find its ID. " +
 		"The credential can be either a **Snowflake upload (PAT)** or a **Snowflake upload (Private Key)** credential."
 
 	resp.Schema = common.GetExportSchema(schema.SingleNestedAttribute{
-		MarkdownDescription: "Snowflake destination table",
+		MarkdownDescription: "Snowflake destination table.",
 		Required:            true,
 		Attributes: map[string]schema.Attribute{
 			"account_locator": schema.StringAttribute{
@@ -99,7 +99,7 @@ func (r *SnowflakeResource) Schema(ctx context.Context, req resource.SchemaReque
 				},
 			},
 			"credential_id": schema.StringAttribute{
-				MarkdownDescription: "The ID of the Funnel credential used to authenticate with Snowflake, found on the My Credentials page in Funnel. Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must have been shared with the System user in Funnel before it can be used here.",
+				MarkdownDescription: "The ID of the Funnel credential used to authenticate with Snowflake, Either a Snowflake upload (PAT) or a Snowflake upload (Private Key) credential. The credential must be shared with the System user. See the [Credentials guide](/providers/funnel-io/funnel/latest/docs/guides/credentials#exports).",
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),

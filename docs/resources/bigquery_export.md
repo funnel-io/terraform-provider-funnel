@@ -3,12 +3,18 @@
 page_title: "funnel_bigquery_export Resource - funnel"
 subcategory: ""
 description: |-
-  BigQuery export
+  Exports data from a Funnel workspace to a table in Google BigQuery on a schedule.
+  Funnel needs write access to the BigQuery project before the export can run. See Google BigQuery Dataset configuration https://help.funnel.io/google-bigquery-connector/google-bigquery-dataset-configuration for how to grant it.
+  Each run only re-exports months with data that has changed in Funnel since the last export. See Best practices when setting up a Data Warehouse Export in Funnel https://help.funnel.io/en/articles/5659437-best-practices-when-setting-up-a-data-warehouse-export-in-funnel#h_111d006e03 for the exact conditions.
 ---
 
 # funnel_bigquery_export (Resource)
 
-BigQuery export
+Exports data from a Funnel workspace to a table in Google BigQuery on a schedule.
+
+Funnel needs write access to the BigQuery project before the export can run. See [Google BigQuery Dataset configuration](https://help.funnel.io/google-bigquery-connector/google-bigquery-dataset-configuration) for how to grant it.
+
+Each run only re-exports months with data that has changed in Funnel since the last export. See [Best practices when setting up a Data Warehouse Export in Funnel](https://help.funnel.io/en/articles/5659437-best-practices-when-setting-up-a-data-warehouse-export-in-funnel#h_111d006e03) for the exact conditions.
 
 ## Example Usage
 
@@ -42,9 +48,9 @@ resource "funnel_bigquery_export" "basic" {
   schedule  = "CRON_TZ=UTC 0 3 * * *" # Daily at 3 AM (UTC)
 
   destination = {
-    project_id         = "my-gcp-project"
-    dataset_id         = "funnel_marketing_data"
-    output_id_template = "daily_export_{date}"
+    project_id          = "my-gcp-project"
+    dataset_id          = "funnel_marketing_data"
+    table_name_template = "funnel_export_{workspaceId}"
     # If you don't provide a "credential_id" a Funnel service account will be used.
     credential_id = var.bigquery_credential_id
   }
@@ -56,26 +62,15 @@ resource "funnel_bigquery_export" "basic" {
     data.funnel_export_field.cost
   ]
 
-  format = {
-    type    = "csv"
-    metrics = "export"
-  }
-
   range = {
+    end = "today"
     rolling_start = {
-      period  = "day"
-      periods = 7
-    }
-    rolling_end = {
-      period  = "day"
-      periods = -1
+      period  = "month"
+      periods = 3
     }
   }
 
-  partition_schema = {
-    by  = "date"
-    per = "month"
-  }
+  partition_by = "month"
 }
 ```
 
@@ -86,9 +81,11 @@ resource "funnel_bigquery_export" "basic" {
 
 - `destination` (Attributes) Bigquery destination table (see [below for nested schema](#nestedatt--destination))
 - `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
-- `format` (Attributes) Export format (see [below for nested schema](#nestedatt--format))
 - `name` (String) Export name. Must not be empty.
-- `partition_schema` (Attributes) Partition schema for the export. **Recommended:** Use `by = "date"` and `per = "month"`. (see [below for nested schema](#nestedatt--partition_schema))
+- `partition_by` (String) How to split the export into parts. One of: `day`, `month`, `quarter`, `year`, `all` or `none`. **Recommended:** `month`
+  - `day`, `month`, `quarter`, `year`: Export a part per period with all data that has values for Funnel date.
+  - `all`: Single part. Export one single fully aggregated part with all data that has values for Funnel date (max 1M rows).
+  - `none`: Single part without Funnel date values. Export a single file with only data that has no values for Funnel date.
 - `range` (Attributes) Export range (see [below for nested schema](#nestedatt--range))
 - `schedule` (String) Export schedule as a cron expression, optionally prefixed with `CRON_TZ=<IANA time zone>`. For example, `CRON_TZ=Europe/Stockholm 10 8 * * *` runs daily at 8:10 am (Europe/Stockholm). Must not be empty.
 - `workspace` (String) Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).
@@ -110,8 +107,8 @@ resource "funnel_bigquery_export" "basic" {
 Required:
 
 - `dataset_id` (String) BigQuery dataset ID. Must be 1-1024 characters and contain only letters, digits and underscores.
-- `output_id_template` (String) BigQuery table name for the export. May contain letters, digits, underscores and placeholders such as `{date}`.
 - `project_id` (String) BigQuery project ID. Must be 6-30 lowercase letters, digits or hyphens, start with a letter and not end with a hyphen. Legacy domain-scoped IDs such as `example.com:my-project` are also accepted.
+- `table_name_template` (String) BigQuery table name for the export, using letters, digits and underscores, such as `funnel_export`. You can optionally add the placeholders `{runId}`, `{runDate}`, `{runHour}`, `{workspaceId}` or `{dataShareId}`, for example to make the name unique per workspace.
 
 Optional:
 
@@ -127,24 +124,6 @@ Optional:
 - `export_type` (String) Export type for the field (optional override)
 - `id` (String) Field ID fetched from data source export_field
 - `type` (String) Field type fetched from data source export_field
-
-
-<a id="nestedatt--format"></a>
-### Nested Schema for `format`
-
-Required:
-
-- `metrics` (String) Metrics format for the export
-- `type` (String) Format type. One of: `parquet`, `csv`, or `tsv`.
-
-
-<a id="nestedatt--partition_schema"></a>
-### Nested Schema for `partition_schema`
-
-Required:
-
-- `by` (String) Field to partition by. One of: `none` or `date`. **Recommended:** `date`
-- `per` (String) Type of partitioning. One of: `day`, `week`, `month`, `quarter`, or `year`. **Recommended:** `month`
 
 
 <a id="nestedatt--range"></a>

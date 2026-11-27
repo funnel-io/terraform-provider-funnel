@@ -46,7 +46,7 @@ resource "funnel_gcs_export" "basic" {
     path               = "marketing-data"
     output_id_template = "funnel_export_{date}"
     credentials_ref    = "gcs-service-account-key"
-    gzip               = true
+    file_format        = "parquet"
   }
 
   fields = [
@@ -56,26 +56,15 @@ resource "funnel_gcs_export" "basic" {
     data.funnel_export_field.cost
   ]
 
-  format = {
-    type    = "parquet"
-    metrics = "export"
-  }
-
   range = {
+    end = "today"
     rolling_start = {
-      period  = "day"
-      periods = 7
-    }
-    rolling_end = {
-      period  = "day"
-      periods = -1
+      period  = "month"
+      periods = 3
     }
   }
 
-  partition_schema = {
-    by  = "date"
-    per = "month"
-  }
+  partition_by = "month"
 }
 ```
 
@@ -86,9 +75,11 @@ resource "funnel_gcs_export" "basic" {
 
 - `destination` (Attributes) GCS destination (see [below for nested schema](#nestedatt--destination))
 - `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
-- `format` (Attributes) Export format (see [below for nested schema](#nestedatt--format))
 - `name` (String) Export name. Must not be empty.
-- `partition_schema` (Attributes) Partition schema for the export. **Recommended:** Use `by = "date"` and `per = "month"`. (see [below for nested schema](#nestedatt--partition_schema))
+- `partition_by` (String) How to split the export into parts. One of: `day`, `month`, `quarter`, `year`, `all` or `none`. **Recommended:** `month`
+  - `day`, `month`, `quarter`, `year`: Export a part per period with all data that has values for Funnel date.
+  - `all`: Single part. Export one single fully aggregated part with all data that has values for Funnel date (max 1M rows).
+  - `none`: Single part without Funnel date values. Export a single file with only data that has no values for Funnel date.
 - `range` (Attributes) Export range (see [below for nested schema](#nestedatt--range))
 - `schedule` (String) Export schedule as a cron expression, optionally prefixed with `CRON_TZ=<IANA time zone>`. For example, `CRON_TZ=Europe/Stockholm 10 8 * * *` runs daily at 8:10 am (Europe/Stockholm). Must not be empty.
 - `workspace` (String) Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).
@@ -110,13 +101,14 @@ resource "funnel_gcs_export" "basic" {
 Required:
 
 - `bucket` (String) GCS bucket for the export. Must be 3-222 characters, contain only lowercase letters, digits, `.`, `-` and `_`, and start and end with a letter or digit.
+- `file_format` (String) File format of the export. One of: `csv`, `tsv`, or `parquet`.
 - `output_id_template` (String) Output ID template for the export. Must not be empty.
 - `path` (String) Path for the export. Must be 1-1024 characters.
 
 Optional:
 
 - `credentials_ref` (String) Reference to GCS credentials secret
-- `gzip` (Boolean) Whether to gzip the exported files
+- `gzip` (Boolean) Whether to gzip the exported files. Defaults to `true` for `csv` and `tsv`. Parquet files are already compressed, so it is always `false` for `parquet` and can't be set to `true`.
 
 
 <a id="nestedatt--fields"></a>
@@ -128,24 +120,6 @@ Optional:
 - `export_type` (String) Export type for the field (optional override)
 - `id` (String) Field ID fetched from data source export_field
 - `type` (String) Field type fetched from data source export_field
-
-
-<a id="nestedatt--format"></a>
-### Nested Schema for `format`
-
-Required:
-
-- `metrics` (String) Metrics format for the export
-- `type` (String) Format type. One of: `parquet`, `csv`, or `tsv`.
-
-
-<a id="nestedatt--partition_schema"></a>
-### Nested Schema for `partition_schema`
-
-Required:
-
-- `by` (String) Field to partition by. One of: `none` or `date`. **Recommended:** `date`
-- `per` (String) Type of partitioning. One of: `day`, `week`, `month`, `quarter`, or `year`. **Recommended:** `month`
 
 
 <a id="nestedatt--range"></a>

@@ -27,9 +27,9 @@ resource "funnel_bigquery_export" "basic" {
   schedule  = "CRON_TZ=UTC 0 3 * * *" # Daily at 3 AM (UTC)
 
   destination = {
-    project_id         = "my-gcp-project"
-    dataset_id         = "funnel_marketing_data"
-    output_id_template = "daily_export_{date}"
+    project_id          = "my-gcp-project"
+    dataset_id          = "funnel_marketing_data"
+    table_name_template = "funnel_export_{workspaceId}"
     # If you don't provide a "credential_id" a Funnel service account will be used.
     credential_id = var.bigquery_credential_id
   }
@@ -41,24 +41,13 @@ resource "funnel_bigquery_export" "basic" {
     data.funnel_export_field.cost
   ]
 
-  format = {
-    type    = "csv"
-    metrics = "export"
-  }
-
   range = {
+    end = "today"
     rolling_start = {
-      period  = "day"
-      periods = 7
-    }
-    rolling_end = {
-      period  = "day"
-      periods = -1
+      period  = "month"
+      periods = 3
     }
   }
 
-  partition_schema = {
-    by  = "date"
-    per = "month"
-  }
+  partition_by = "month"
 }

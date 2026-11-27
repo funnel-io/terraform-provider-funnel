@@ -7,6 +7,7 @@ import (
 	"terraform-provider-funnel/provider/funnel"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -16,6 +17,7 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &GCSResource{}
 var _ resource.ResourceWithImportState = &GCSResource{}
+var _ resource.ResourceWithValidateConfig = &GCSResource{}
 
 func NewGCSResource() resource.Resource {
 	return &GCSResource{}
@@ -31,6 +33,7 @@ type FunnelGCSDestination struct {
 	Bucket           types.String `tfsdk:"bucket"`
 	GZip             types.Bool   `tfsdk:"gzip"`
 	CredentialsRef   types.String `tfsdk:"credentials_ref"`
+	FileFormat       types.String `tfsdk:"file_format"`
 }
 
 type FunnelGCSResource struct {
@@ -45,6 +48,8 @@ type FunnelGCSDestinationJSON struct {
 	Bucket           string `json:"bucket"`
 	GZip             bool   `json:"gzip"`
 	CredentialsRef   string `json:"credentialsRef"`
+	// Sent to the API as format.type.
+	FileFormat string `json:"-"`
 	// Can't be configured via Terraform currently.
 	SummaryFileFormat     string `json:"summaryFileFormat"`
 	SummaryFileIdTemplate string `json:"summaryFileIdTemplate"`
@@ -88,7 +93,7 @@ func (r *GCSResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				},
 			},
 			"gzip": schema.BoolAttribute{
-				MarkdownDescription: "Whether to gzip the exported files",
+				MarkdownDescription: "Whether to gzip the exported files. Defaults to `true` for `csv` and `tsv`. Parquet files are already compressed, so it is always `false` for `parquet` and can't be set to `true`.",
 				Optional:            true,
 				Computed:            true,
 			},
@@ -96,8 +101,33 @@ func (r *GCSResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				MarkdownDescription: "Reference to GCS credentials secret",
 				Optional:            true,
 			},
+			"file_format": schema.StringAttribute{
+				MarkdownDescription: "File format of the export. One of: `csv`, `tsv`, or `parquet`.",
+				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.OneOf("csv", "tsv", "parquet"),
+				},
+			},
 		},
 	}, "GCS export")
+}
+
+// Parquet is already compressed, so the API never gzips it.
+func (r *GCSResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var fileFormat types.String
+	var gzip types.Bool
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("destination").AtName("file_format"), &fileFormat)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("destination").AtName("gzip"), &gzip)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if fileFormat.ValueString() == "parquet" && gzip.ValueBool() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("destination").AtName("gzip"),
+			"Invalid gzip for Parquet",
+			"Parquet files are already compressed, so gzip can't be true when file_format is parquet.",
+		)
+	}
 }
 
 func (r *GCSResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -290,6 +320,10 @@ func getExport(ctx context.Context, config *common.FunnelProviderModel, accountI
 	}
 
 	common.ExportFromAPI(&respObj.ExportSharedJSON)
+	respObj.Destination.FileFormat = respObj.Format.Type
+	if respObj.Destination.FileFormat == "raw" {
+		respObj.Destination.FileFormat = "parquet"
+	}
 
 	export, err := common.ConvertJSONToTF[FunnelGCSJSON, FunnelGCSResource](respObj)
 	if err != nil {
@@ -329,9 +363,15 @@ func deleteGCSExport(ctx context.Context, config *common.FunnelProviderModel, ac
 func prepareGCSExportData(data *FunnelGCSJSON, model FunnelGCSResource) {
 	common.ExportToAPI(&data.ExportSharedJSON, "gcs")
 	data.Destination.Type = "gcs"
-	data.Destination.GZip = data.Destination.GZip || true
+	// gzip defaults to true, except for Parquet which is already compressed.
+	gzip := model.Destination.GZip
+	data.Destination.GZip = model.Destination.FileFormat.ValueString() != "parquet" && (gzip.IsNull() || gzip.IsUnknown() || gzip.ValueBool())
 	data.Destination.SchemaFileFormat = "sql"
 	data.Destination.SchemaFileIdTemplate = "{runId}/funnel_schema"
 	data.Destination.SummaryFileFormat = "csv"
 	data.Destination.SummaryFileIdTemplate = "{runId}/funnel_summary"
+	data.Format.Type = data.Destination.FileFormat
+	if data.Format.Type == "parquet" {
+		data.Format.Type = "raw"
+	}
 }

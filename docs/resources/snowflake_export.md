@@ -59,26 +59,15 @@ resource "funnel_snowflake_export" "basic" {
     data.funnel_export_field.cost
   ]
 
-  format = {
-    type    = "parquet"
-    metrics = "export"
-  }
-
   range = {
+    end = "today"
     rolling_start = {
-      period  = "day"
-      periods = 7
-    }
-    rolling_end = {
-      period  = "day"
-      periods = -1
+      period  = "month"
+      periods = 3
     }
   }
 
-  partition_schema = {
-    by  = "date"
-    per = "month"
-  }
+  partition_by = "month"
 }
 ```
 
@@ -89,9 +78,11 @@ resource "funnel_snowflake_export" "basic" {
 
 - `destination` (Attributes) Snowflake destination table (see [below for nested schema](#nestedatt--destination))
 - `fields` (Attributes List) Export fields as a list of fields from export_field data source (see [below for nested schema](#nestedatt--fields))
-- `format` (Attributes) Export format (see [below for nested schema](#nestedatt--format))
 - `name` (String) Export name. Must not be empty.
-- `partition_schema` (Attributes) Partition schema for the export. **Recommended:** Use `by = "date"` and `per = "month"`. (see [below for nested schema](#nestedatt--partition_schema))
+- `partition_by` (String) How to split the export into parts. One of: `day`, `month`, `quarter`, `year`, `all` or `none`. **Recommended:** `month`
+  - `day`, `month`, `quarter`, `year`: Export a part per period with all data that has values for Funnel date.
+  - `all`: Single part. Export one single fully aggregated part with all data that has values for Funnel date (max 1M rows).
+  - `none`: Single part without Funnel date values. Export a single file with only data that has no values for Funnel date.
 - `range` (Attributes) Export range (see [below for nested schema](#nestedatt--range))
 - `schedule` (String) Export schedule as a cron expression, optionally prefixed with `CRON_TZ=<IANA time zone>`. For example, `CRON_TZ=Europe/Stockholm 10 8 * * *` runs daily at 8:10 am (Europe/Stockholm). Must not be empty.
 - `workspace` (String) Funnel workspace ID. Must be exactly 20 characters (letters, digits, `-` and `_`).
@@ -128,24 +119,6 @@ Optional:
 - `export_type` (String) Export type for the field (optional override)
 - `id` (String) Field ID fetched from data source export_field
 - `type` (String) Field type fetched from data source export_field
-
-
-<a id="nestedatt--format"></a>
-### Nested Schema for `format`
-
-Required:
-
-- `metrics` (String) Metrics format for the export
-- `type` (String) Format type. One of: `parquet`, `csv`, or `tsv`.
-
-
-<a id="nestedatt--partition_schema"></a>
-### Nested Schema for `partition_schema`
-
-Required:
-
-- `by` (String) Field to partition by. One of: `none` or `date`. **Recommended:** `date`
-- `per` (String) Type of partitioning. One of: `day`, `week`, `month`, `quarter`, or `year`. **Recommended:** `month`
 
 
 <a id="nestedatt--range"></a>

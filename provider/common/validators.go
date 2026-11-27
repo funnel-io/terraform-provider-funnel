@@ -25,11 +25,11 @@ func PeriodValidator() validator.String {
 	return stringvalidator.OneOf("day", "week", "month", "quarter", "year")
 }
 
-// Alphanumerics and underscores, plus template placeholders such as {date}.
+// Alphanumerics and underscores, plus template placeholders such as {runId}.
 func BigqueryTableTemplateValidator() validator.String {
 	return stringvalidator.RegexMatches(
 		regexp.MustCompile(`^([A-Za-z0-9_]|\{[A-Za-z]+\})+$`),
-		"must contain only alphanumeric characters, underscores and placeholders such as {date}",
+		"must contain only alphanumeric characters, underscores and placeholders such as {runId}",
 	)
 }
 
